@@ -1,8 +1,8 @@
 # Research basis
 
-What each part of Prahari takes from the 2025–26 literature, and what is new in combining them. Preprints marked † are recent and not yet peer-reviewed.
+What each part of Vahini takes from the 2025–26 literature, and what is new in combining them. Preprints marked † are recent and not yet peer-reviewed.
 
-## The two findings Prahari is built around
+## The two findings Vahini is built around
 
 | Finding | Source | Number |
 |---|---|---|
@@ -41,9 +41,9 @@ What each part of Prahari takes from the 2025–26 literature, and what is new i
 
 ## What is new in the combination
 
-1. **Provenance enforcement inside the SOC itself.** Published CaMeL/FIDES/Progent work protects assistants and coding agents. Prahari applies it to the security analyst agent, where the adversary writes the input by definition.
+1. **Provenance enforcement inside the SOC itself.** Published CaMeL/FIDES/Progent work protects assistants and coding agents. Vahini applies it to the security analyst agent, where the adversary writes the input by definition.
 2. **Privacy and provenance in one label.** The same `Labeled` value carries taint *and* tenant readers, so one engine stops both injection-driven actions and cross-tenant leaks.
-3. **Statistical autonomy.** Commercial AI SOCs claim "98% accuracy". Prahari gives the SOC lead a dial with a distribution-free bound on missed attacks, and abstains when that bound can't be met.
+3. **Statistical autonomy.** Commercial AI SOCs claim "98% accuracy". Vahini gives the SOC lead a dial with a distribution-free bound on missed attacks, and abstains when that bound can't be met.
 4. **Injection as a detection signal.** An alert that argues for its own dismissal is treated as more suspicious, not less.
 5. **One queue for infrastructure and AI agents.** AgentWatch makes the customer's LLM agents just another monitored asset, using the same taint logic.
 

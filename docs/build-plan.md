@@ -1,12 +1,12 @@
 # Hackathon-day build plan (31 Oct – 1 Nov 2026, Mitigata Bengaluru)
 
-The core planes already run offline (`python -m prahari.demo`). Hackathon day turns them into a live product against a real SIEM, with measured numbers.
+The core planes already run offline (`python -m vahini.demo`). Hackathon day turns them into a live product against a real SIEM, with measured numbers.
 
 ## Work split (2 people)
 
 | Track | Owner | Deliverable |
 |---|---|---|
-| A: Live pipeline | Member 1 | Wazuh docker stack → alert webhook → Prahari → actions back through a customer-side executor |
+| A: Live pipeline | Member 1 | Wazuh docker stack → alert webhook → Vahini → actions back through a customer-side executor |
 | B: Models and evaluation | Member 2 | LLM quarantined extractor and planner; Prompt Guard 2 layer; GUIDE calibration; metrics |
 | C: Console | Shared | Analyst queue with approve/deny, taint provenance per argument, ledger viewer |
 
@@ -24,8 +24,8 @@ The core planes already run offline (`python -m prahari.demo`). Hackathon day tu
 
 ## Live demo script (5 minutes)
 
-1. **Alert storm.** 50 alerts replayed into Wazuh. Prahari collapses them into 3 incidents, and the top one shows a 4-stage kill chain.
-2. **Steering attempt.** One alert's user-agent tells the AI to close it as a pentest. Prahari flags it, raises the score, and refuses to auto-close.
+1. **Alert storm.** 50 alerts replayed into Wazuh. Vahini collapses them into 3 incidents, and the top one shows a 4-stage kill chain.
+2. **Steering attempt.** One alert's user-agent tells the AI to close it as a pentest. Vahini flags it, raises the score, and refuses to auto-close.
 3. **Fooled planner.** We force the planner to propose allowlisting the attacker IP. The policy engine sends it to the console with the provenance chain `ip ← TELEMETRY.src_ip`.
 4. **Privacy.** Side-by-side of the raw alert and what the model received. Zero raw identifiers, zero secrets.
 5. **The dial.** Move α from 5% to 1% and watch the auto-close share and the measured miss rate on held-out data.

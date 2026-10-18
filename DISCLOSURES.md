@@ -20,14 +20,16 @@ CyberForge rule 1 asks participants to disclose third-party tools, APIs, dataset
 | OWASP Top 10 for Agentic Applications; MITRE ATT&CK / ATLAS | Detection mapping, kill-chain ordering |
 
 ## Prior work by the team
-Vishnu Kosuri has earlier public research repositories on related topics: prompt-injection provenance detection (`taint`), alert correlation (`triage`) and LLM endpoint scanning (`promptstrike`). No code from them is copied here; Prahari is a fresh implementation.
+Vishnu Kosuri has earlier public research repositories on related topics: prompt-injection provenance detection (`taint`), alert correlation (`triage`) and LLM endpoint scanning (`promptstrike`). No code from them is copied here; Vahini is a fresh implementation.
 
-## Planned for hackathon day
+## Third-party components
 | Component | License |
 |---|---|
 | Wazuh | GPLv2 |
 | OpenTelemetry Collector | Apache-2.0 |
-| FastAPI | MIT |
+| FastAPI, Uvicorn | MIT, BSD-3 |
+| Anthropic Python SDK | MIT |
+| Ollama (optional, local models) | MIT |
 | Llama Prompt Guard 2 (`meta-llama/Llama-Prompt-Guard-2-86M`) | Llama 4 Community License |
 | Microsoft GUIDE dataset (Kaggle) | CDLA-2.0 |
 | Claude API (Anthropic) and/or a local open-weight model | Provider terms |

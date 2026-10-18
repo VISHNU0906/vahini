@@ -7,7 +7,7 @@
 - Cross-tenant confidentiality, since an MSSP serves 1,000+ organisations.
 
 ## Adversary
-An external attacker who can write to any field that ends up in telemetry: HTTP headers, usernames, file names, command lines, email subject and body, ticket text, documents an AI agent reads. They know the SOC uses LLM triage. They cannot modify Prahari's code, playbooks, CMDB or change-ticket system, which are `SYSTEM`-trusted. A compromised trusted source is out of scope here and is handled by normal access control.
+An external attacker who can write to any field that ends up in telemetry: HTTP headers, usernames, file names, command lines, email subject and body, ticket text, documents an AI agent reads. They know the SOC uses LLM triage. They cannot modify Vahini's code, playbooks, CMDB or change-ticket system, which are `SYSTEM`-trusted. A compromised trusted source is out of scope here and is handled by normal access control.
 
 ## Threats and controls
 
@@ -25,5 +25,5 @@ An external attacker who can write to any field that ends up in telemetry: HTTP 
 | T10 | Customer AI agent hijack | Support bot emails customer list to an address from a ticket | AgentWatch AGENT-001/002 | Agents not instrumented with OTel |
 
 ## Explicit non-goals
-- Prahari does not claim its detectors stop adaptive attackers. Published evidence says no detector does (arXiv:2510.09023). The guarantees come from the policy engine and the conformal gate.
-- Prahari does not make autonomous high-risk changes. That is a product decision, not a limitation: Prophet's 2026 survey found 0% of organisations allow full autonomy.
+- Vahini does not claim its detectors stop adaptive attackers. Published evidence says no detector does (arXiv:2510.09023). The guarantees come from the policy engine and the conformal gate.
+- Vahini does not make autonomous high-risk changes. That is a product decision, not a limitation: Prophet's 2026 survey found 0% of organisations allow full autonomy.

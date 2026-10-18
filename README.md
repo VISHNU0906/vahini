@@ -1,80 +1,124 @@
-# Prahari
+# Vahini
 
-**An agentic SOC copilot that cannot be talked out of an alert.**
+**An AI-powered SOC that cannot be manipulated. Built to withstand modern, AI-powered attacks.**
 
-Prahari (प्रहरी, "sentinel") triages security alerts with LLM agents. It is built on one assumption: every log line, email and tool output it reads may have been written by the attacker.
+> Prevention is ideal. Detection is a must. Making detection reliable matters even more.
 
-> CyberForge 2026 (Mitigata × HackCulture). Theme: *Innovative Solution for AI & Cybersecurity*. Tracks: **AI-Assisted Security Operations** and **AI Security**.
+Vahini (वाहिनी, "a force") is an AI SOC built by Team Zenith for CyberForge 2026. It reads every alert, log and AI-agent trace, and it assumes the attacker wrote some of what it reads.
+
+![Vahini across an enterprise](docs/diagrams/topology.svg)
 
 ---
 
 ## The problem
 
-AI SOC agents are moving from pilot to production. They have two documented failure modes:
+Security teams are handing alert triage to AI. That's the right move. But the AI reads usernames, browser strings, emails and command lines all day, and attackers can write into every one of them.
 
-1. **They get steered by the logs they read.** Attackers plant instructions in user-agents, usernames, command lines and emails. In LogInject (arXiv:2607.14493), these payloads hijack LLM log analysis up to **88.2%** of the time. Layered filters still leave **8.4%** getting through. Sygnia showed an XDR's AI summary repeating the attacker's own cover story. A fully automated SOC "would have closed the ticket".
-2. **They dismiss real attacks when the evidence is missing.** On ALERT-BENCH (arXiv:2610.10608, Oct 2026), every baseline triage agent missed **at least 40.4%** of attack alerts. The most common cause was treating an empty search as proof of "benign". Clearing the logs produces exactly that result.
+AI can be manipulated. It can hallucinate. It can be attacked. Today it is trusted like an insider anyway.
 
-Meanwhile, the volume keeps growing. CERT-In handled **2.94 million** incidents in 2025, up 44% on 2024. About **28–40%** of SOC alerts are never investigated. In surveys, **0%** of organisations allow AI full autonomy, because nobody can bound how often it will be wrong. MSSPs that send customer logs to cloud LLMs also have a DPDP Act problem.
+| Where it breaks | What happens |
+|---|---|
+| **Poisoned input** | A log line says "this is a test, close it", and the AI does. |
+| **Silence read as safety** | A search comes back empty, so the AI calls the alert harmless. Wiping the logs works. |
+| **Filters getting bypassed** | Prompt filters catch known tricks. Attackers change tricks. |
+| **Data leaking into prompts** | Raw logs full of names and secrets go straight into AI models. |
+| **Confident and wrong** | The AI hallucinates a verdict and sounds sure, so people re-check everything. |
+| **Unwatched AI agents** | Company chatbots and agents call tools, and the SOC can't see them. |
 
-## What Prahari does
+Attackers use AI now too. A SOC system that can hallucinate is not a reliable defense.
 
-Five planes. Each is a published 2025–26 result or production pattern, re-engineered for a multi-tenant SOC:
+## The idea: zero trust, for the AI itself
 
-| Plane | What it guarantees | Built on |
+Vahini brings zero trust and defense in depth into the AI-powered SOC. Nothing is trusted by default, and every layer checks the one before it. Trust, but verify.
+
+| Layer | What it does | Stops |
 |---|---|---|
-| **Privacy** | No model ever sees a raw identifier or secret. Tenant-keyed HMAC tokens keep correlation intact ("one user, three hosts", "same /24"). | SOC Prime LogTotal sanitizer (2026), DPDP Rules 2025 |
-| **Provenance** | Attacker-controlled text can change what the model *says*, never what the SOC *does*. Every value carries taint, and a deterministic policy engine gates each action. | CaMeL (DeepMind, 2503.18813), FIDES (Microsoft, 2505.23643), Progent (2504.11703), Meta *Agents Rule of Two* |
-| **Detection** | Injection attempts are caught and turned into a **signal**: an alert that tries to talk the SOC out of itself gets a higher score. | Prompt Guard 2 / LlamaFirewall (2505.03574), known-answer canaries (DataSentinel, 2504.11358), TaskTracker (2406.00799) |
-| **Investigation** | No benign verdict while an attack hypothesis is open. An empty search counts as a coverage gap, never as evidence. Every step goes into a hash-chained, tamper-evident ledger. | AIDA / ALERT-BENCH (2610.10608) |
-| **Assurance** | Auto-close only below a **conformal threshold**, so at most α (e.g. 1%) of real attacks can ever be auto-closed. This holds even when the model is badly calibrated. | Split conformal prediction (distribution-free) |
+| 1. Sanitise at the edge | Raw data never leaves your network. Names become tokens, secrets get stripped. | data leaking into prompts |
+| 2. Scan for manipulation | Poisoned input is caught before any AI reads it, and it raises suspicion. | poisoned input |
+| 3. Quarantine the reader | The AI that reads raw text can only hand back facts, never orders. | filters getting bypassed |
+| 4. Gate every action | Every fact remembers where it came from. Untrusted data behind an action means a human signs off. | AI acting for the attacker |
+| 5. Prove before closing | An alert closes only when trusted evidence rules out every attack theory. | silence read as safety |
+| 6. Bound the autonomy | The AI auto-closes only below a ceiling your SOC lead sets. | confident and wrong |
+| 7. Watch the agents | Your own AI agents are monitored with the same rules, in the same queue. | unwatched AI agents |
+| Base. Record everything | Every step goes into a tamper-evident ledger. | unverifiable decisions |
 
-Plus **AgentWatch**, which runs the same taint logic on the customer's own AI agents. Prahari ingests OpenTelemetry GenAI traces (`gen_ai.*`) and raises an alert when a tool call is steered by content the agent *read* instead of what the user *asked*. The alerts are mapped to OWASP ASI01/ASI02 and MITRE ATLAS and land in the same SOC queue.
+**No action is taken unless it has passed layers of authentic, validated findings.**
 
-![Enterprise topology](docs/diagrams/topology.svg)
+## From scripts to agents
 
-*Raw telemetry is scanned and tokenised inside the customer's network. Prahari and every model only see tokens. Actions return through the customer's own executor.*
+SOC automation used to mean scripts: one fixed step when a rule fires. Vahini runs AI agents that never stop. They read context, take contextual action, mitigation and remediation, and stay fenced in by zero trust. Low-risk work on trusted data happens on its own. Everything else waits for a person, with the reason attached.
 
-![Alert lifecycle](docs/diagrams/lifecycle.svg)
-
-More diagrams (taint flow, policy engine, privacy, judge and ledger, conformal gate, AgentWatch, correlation) are in [docs/architecture.md](docs/architecture.md). They are generated by [`docs/diagrams/diagrams.py`](docs/diagrams/diagrams.py).
-
-Full design: [docs/architecture.md](docs/architecture.md). Threats: [docs/threat-model.md](docs/threat-model.md). Research basis: [docs/research-basis.md](docs/research-basis.md). Hackathon-day build plan: [docs/build-plan.md](docs/build-plan.md). Third-party disclosure: [DISCLOSURES.md](DISCLOSURES.md).
+![One alert, end to end](docs/diagrams/lifecycle.svg)
 
 ## Run it
 
-Python 3.10+, no dependencies for the core.
+Python 3.10 or newer. The core has no dependencies.
 
 ```bash
 pip install -e ".[dev]"
-python -m prahari.demo      # end-to-end on examples/
-pytest -q                   # 26 tests
+vahini demo                                   # offline, end to end
+vahini replay examples/wazuh_alerts.json      # triage a real Wazuh alerts file
+pytest -q
 ```
 
-The demo walks through six scenes:
+To run the API (and the always-on agent mesh behind it):
 
-1. The calibrated conformal gate.
-2. What the model sees after pseudonymisation.
-3. Triage of a six-alert storm, including an alert carrying a log-borne injection.
-4. A fooled planner trying to allowlist the attacker's IP and being sent to a human.
-5. Correlation into a three-stage kill chain on tokens only.
-6. AgentWatch catching an injection-driven `send_email` in an AI support agent.
+```bash
+pip install -e ".[service]"
+export VAHINI_TENANT=vishnu-org VAHINI_TENANT_KEY=... VAHINI_CROWN_JEWELS=SAP-FIN-DB
+vahini serve --port 8080
+```
 
-## Status
-
-| Component | State |
+| Endpoint | Purpose |
 |---|---|
-| Provenance labels, policy engine, conformal gate, privacy plane, ledger, judge, correlation, AgentWatch, canaries | Working, tested (`src/prahari/`) |
-| LLM-backed quarantined extractor and planner (Claude / GPT / local) | Interfaces defined; built on hackathon day |
-| Prompt Guard 2 as detection layer 2 | Optional extra (`.[ml]`), hackathon day |
-| Wazuh connector, analyst console (approve/deny), GUIDE-dataset calibration | Hackathon day ([build plan](docs/build-plan.md)) |
+| `POST /v1/alerts` | A Vahini alert, or a raw Wazuh alert with `?source=wazuh` |
+| `POST /v1/traces` | OTLP/JSON traces from your AI agents |
+| `GET /v1/cases/{id}` | Verdict, route, actions and the verified ledger |
+| `GET /v1/incidents` | Correlated incidents, most advanced kill chain first |
+| `GET /v1/approvals` | Actions waiting for an analyst, with the provenance of every argument |
+| `POST /v1/approvals/{id}` | Approve or deny |
 
-Calibration numbers in the demo are **synthetic and seeded**. On hackathon day they are replaced with scores computed on Microsoft's GUIDE triage dataset (1.6M alerts labelled TP/BP/FP).
+With Docker: copy `.env.example` to `.env`, then `docker compose up`.
+
+To use a real model, install `.[llm]` and set `ANTHROPIC_API_KEY` for Claude, or point `OllamaModel` at a local model when data must stay on-prem. Both plug into the quarantined reader and the planner in [`src/vahini/llm.py`](src/vahini/llm.py).
+
+## What's in the box
+
+```
+src/vahini/
+  privacy.py        layer 1  tenant-keyed tokens, secret removal
+  detect.py         layer 2  hidden-character and steering detection on raw text
+  llm.py            layer 3  quarantined reader + planner, Claude or local model, canary-checked
+  capability.py     layer 4  every value carries where it came from
+  policy.py         layer 4  plain-code policy gate
+  judge.py          layer 5  no benign verdict while an attack theory is open
+  conformal.py      layer 6  auto-close ceiling with a provable bound
+  agentwatch.py     layer 7  injection-steered tool calls in your own AI agents
+  ledger.py         base     hash-chained evidence ledger
+  canary.py                  known-answer check on every reader call
+  correlate.py               alerts -> incidents, ranked by kill-chain stage
+  triage.py                  the pipeline that ties the layers together
+  agents.py                  always-on agent mesh, executor, approval queue
+  connectors/       wazuh.py (alerts.json / webhook), otel.py (OTLP/JSON traces)
+  service.py                 FastAPI app
+  cli.py, demo.py
+docs/
+  architecture.md   how each layer works, with diagrams
+  threat-model.md   what we defend against, and what we don't
+  research-basis.md the papers and products this builds on
+  adr/              the decisions behind the design
+  diagrams/         generated SVGs (python docs/diagrams/diagrams.py)
+```
+
+## Honest limits
+
+- The detectors will miss things. Adaptive attackers beat every published filter. That's why safety comes from the policy gate and the ceiling, not from detection.
+- The auto-close ceiling only holds while new alerts look like the calibration data. Recalibrate per customer, weekly.
+- The demo calibration is synthetic. Real calibration needs labelled history.
+- The executor in this repo is a dry run. Real EDR, IdP and firewall connectors plug into the same interface.
 
 ## Team Zenith
 
-Two-person team (CyberForge rule). Vishnu Kosuri: GSEC, GCIH, CEH v13; 1st place OWASP AppSec Bangalore CTF; 1st place SANS NetWars. Teammate: `[name]`.
-
-## License
+Built for CyberForge 2026 (Mitigata × HackCulture). Credits and third-party components are in [DISCLOSURES.md](DISCLOSURES.md).
 
 Apache-2.0

@@ -1,11 +1,11 @@
-"""Prahari architecture diagrams, generated as plain SVG (stdlib only).
+"""Vahini architecture diagrams, generated as plain SVG (stdlib only).
 
     python docs/diagrams/diagrams.py        # writes docs/diagrams/*.svg (light, for GitHub)
 
 ``render(mode="page")`` returns the same drawings with colours as CSS custom
 properties (var(--ink) ...) so a themed HTML page can inline them.
 Token values shown in the privacy and correlation figures are the real
-outputs of prahari.privacy.Vault for the demo tenant keys.
+outputs of vahini.privacy.Vault for the demo tenant keys.
 """
 
 from __future__ import annotations
@@ -14,11 +14,14 @@ import math
 from html import escape
 from pathlib import Path
 
-# Beige monochrome, matching the pitch deck. One warm umber marks untrusted data.
+# Paper-white base, slate ink, soft tinted zones. Navy marks emphasis; brick marks anything attacker-controlled.
 LIGHT = {
-    "bg": "#ECE5D8", "panel": "#F5F0E6", "ink": "#1D1B18", "muted": "#6A6358", "line": "#BFB5A4",
-    "accent": "#4A453E", "trust": "#1D1B18", "untrust": "#8C4B2F",
-    "trust-soft": "#E2D9C9", "untrust-soft": "#EBD9CC", "accent-soft": "#E6DECF", "zone": "#E7E0D2",
+    "bg": "#FBFAF7", "panel": "#FFFFFF", "ink": "#1F2933", "muted": "#5F6B76", "line": "#CBD2D9",
+    "accent": "#2B4C7E", "accent-soft": "#E6EDF6",
+    "trust": "#2F6F5E", "trust-soft": "#E3F0EA",
+    "untrust": "#B5502F", "untrust-soft": "#F8E7E0",
+    "zone": "#F3F5F7", "rose": "#FBF0EC", "sage": "#EEF5EE", "sky": "#EDF2F9", "sand": "#F7F3EA",
+    "white": "#FFFFFF",
 }
 
 SANS = "Geist, Segoe UI, Helvetica, Arial, sans-serif"
@@ -108,7 +111,7 @@ class D:
 # ---------------------------------------------------------------------------
 def context(mode):
     d = D("context", 1160, 500, "System context: raw telemetry is scanned and tokenised at the customer edge; "
-          "Prahari and model providers only ever receive tokens; actions return through the customer's executor.", mode)
+          "Vahini and model providers only ever receive tokens; actions return through the customer's executor.", mode)
     d.zone(20, 40, 330, 420, "CUSTOMER BOUNDARY", "trust")
     d.node(40, 80, 140, 64, "SIEM · EDR", ["Wazuh, Elastic"])
     d.node(190, 80, 140, 64, "AI agents", ["OTel GenAI spans"])
@@ -120,7 +123,7 @@ def context(mode):
     d.line([(110, 338), (110, 274)], "trust", "key", 118, 312, anchor="start")
     d.line([(180, 376), (188, 376)], "trust", head=True)
 
-    d.zone(410, 40, 440, 420, "PRAHARI SERVICE (MSSP CLOUD OR CUSTOMER VPC)")
+    d.zone(410, 40, 440, 420, "VAHINI SERVICE (MSSP CLOUD OR CUSTOMER VPC)")
     d.node(430, 200, 180, 72, "Ingest queue", ["tokens + L1 findings", "per-tenant"])
     d.node(640, 80, 190, 192, "Triage core", ["quarantined LLM + canary", "planner (no raw text)",
                                                "policy engine", "judge + conformal gate", "AgentWatch rules"])
@@ -548,22 +551,20 @@ def ic_monitor(d, x, y):
 
 def badge(d, x, y, s, on_dark=False):
     w = 8 * len(s) + 12
-    d.rect(x, y, w, 18, "bg" if on_dark else "ink", "bg" if on_dark else "ink", 1, r=4)
-    d.text(x + w / 2, y + 13, s, 10, "ink" if on_dark else "bg", "middle", 600, mono=True)
+    d.rect(x, y, w, 18, "white" if on_dark else "accent", "white" if on_dark else "accent", 1, r=9)
+    d.text(x + w / 2, y + 13, s, 10, "accent" if on_dark else "white", "middle", 600, mono=True)
 
 
 def tile(d, x, y, w, h, title, dark_header=False, fill="panel"):
-    d.rect(x, y, w, h, fill, "line", 1.3, r=8)
-    d.rect(x, y, w, 24, "ink" if dark_header else "accent-soft", "ink" if dark_header else "line", 1, r=8)
-    d.rect(x, y + 12, w, 12, "ink" if dark_header else "accent-soft", "ink" if dark_header else "accent-soft", 0, r=0)
-    d.text(x + 12, y + 17, title, 10.5, "bg" if dark_header else "ink", weight=600, mono=True)
+    d.rect(x, y, w, h, fill, "line", 1.2, r=8)
+    d.text(x + 12, y + 18, title, 10.5, "accent" if dark_header else "muted", weight=600, mono=True)
+    d.raw(f'<line x1="{x + 12}" y1="{y + 25}" x2="{x + w - 12}" y2="{y + 25}" '
+          f'style="stroke:{d.c("line")};stroke-width:1"/>')
 
 
-def zone_h(d, x, y, w, h, title):
-    d.rect(x, y, w, h, "zone", "ink", 1.4, r=12, dash="6 4")
-    d.rect(x, y, w, 30, "ink", "ink", 1, r=12)
-    d.rect(x, y + 15, w, 15, "ink", "ink", 0, r=0)
-    d.text(x + 14, y + 20, title, 11.5, "bg", weight=600, mono=True)
+def zone_h(d, x, y, w, h, title, tint="zone", head="ink"):
+    d.rect(x, y, w, h, tint, "line", 1.4, r=14)
+    d.text(x + 16, y + 22, title, 11.5, head, weight=700, mono=True)
 
 
 def label(d, x, y, s, sub=None, anchor="middle"):
@@ -575,10 +576,10 @@ def label(d, x, y, s, sub=None, anchor="middle"):
 def topology(mode):
     d = D("topology", 1440, 760, "Enterprise topology: every network segment streams telemetry to the SIEM; the edge "
           "sanitiser scans and tokenises it inside the customer network; only tokens cross the egress firewall to "
-          "Prahari's always-on agent mesh, which works through layered checks; approved actions return to the "
+          "Vahini's always-on agent mesh, which works through layered checks; approved actions return to the "
           "customer's own SOAR executor.", mode)
     # Internet -------------------------------------------------------------------------------
-    zone_h(d, 16, 40, 150, 680, "INTERNET")
+    zone_h(d, 16, 40, 150, 680, "INTERNET", "rose", "untrust")
     ic_user(d, 91, 118, "untrust", "untrust"); label(d, 91, 152, "Attacker", "AI-assisted")
     ic_mail(d, 91, 250, "untrust"); label(d, 91, 282, "Phishing email")
     ic_globe(d, 91, 370); label(d, 91, 402, "Web traffic")
@@ -594,7 +595,7 @@ def topology(mode):
     d.line([(214, 166), (248, 166)], "muted")
 
     # Enterprise ---------------------------------------------------------------------------
-    zone_h(d, 232, 40, 612, 680, "VISHNU ORG · vishnu.corp · ENTERPRISE NETWORK")
+    zone_h(d, 232, 40, 612, 680, "VISHNU ORG · vishnu.corp", "sage", "trust")
     tile(d, 250, 82, 280, 150, "DMZ")
     ic_server(d, 330, 152); label(d, 330, 192, "BLR-WEB-01", "public site")
     ic_server(d, 450, 152); label(d, 450, 192, "BLR-VPN-01", "remote access")
@@ -616,10 +617,10 @@ def topology(mode):
     for xx in (390, 686):
         d.line([(xx, 396), (xx, 412)], "ink")
     # edge sanitiser
-    d.rect(250, 478, 576, 72, "ink", "ink", 1, r=8)
-    ic_shield(d, 284, 514, "panel", "ink")
-    d.text(314, 507, "EDGE SANITISER", 12, "bg", weight=600, mono=True)
-    d.text(314, 527, "scan raw text · tokenise identities · strip secrets", 11.5, "bg")
+    d.rect(250, 478, 576, 72, "accent", "accent", 1, r=10)
+    ic_shield(d, 284, 514, "white", "accent")
+    d.text(314, 507, "EDGE SANITISER", 12, "white", weight=600, mono=True)
+    d.text(314, 527, "scan raw text · tokenise identities · strip secrets", 11.5, "white")
     badge(d, 730, 490, "L1", True); badge(d, 768, 490, "L2", True)
     d.line([(538, 460), (538, 476)], "ink")
     # vault + executor
@@ -638,9 +639,9 @@ def topology(mode):
     d.text(866, 566, "tokens", 10.5, "ink", "middle", 600, mono=True)
     d.text(866, 580, "only", 10.5, "ink", "middle", 600, mono=True)
 
-    # Prahari -------------------------------------------------------------------------------
-    zone_h(d, 900, 40, 362, 568, "PRAHARI · AI SOC · ALWAYS ON")
-    tile(d, 918, 82, 326, 120, "CONTINUOUS AI AGENTS", dark_header=True)
+    # Vahini -------------------------------------------------------------------------------
+    zone_h(d, 900, 40, 362, 568, "VAHINI · AI SOC · ALWAYS ON", "sky", "accent")
+    tile(d, 918, 82, 326, 120, "CONTINUOUS AI AGENTS · LIVE", dark_header=True)
     for xx, nm in ((962, "Triage"), (1040, "Investigate"), (1118, "Respond"), (1196, "AgentWatch")):
         ic_bot(d, xx, 142)
         d.text(xx, 182, nm, 11, "ink", "middle", 600)
@@ -653,10 +654,10 @@ def topology(mode):
     ic_bot(d, 1112, 272); d.text(1134, 266, "proposes", 11.5, "ink", weight=600)
     d.text(1134, 282, "no raw text", 10.5, "muted", mono=True)
     d.line([(1076, 264), (1084, 264)], "ink")
-    d.rect(918, 324, 326, 62, "ink", "ink", 1, r=8)
-    ic_lock(d, 948, 356, "bg", "ink")
-    d.text(976, 351, "POLICY GATE · ZERO TRUST", 12, "bg", weight=600, mono=True)
-    d.text(976, 369, "untrusted data → human approval", 11, "bg")
+    d.rect(918, 324, 326, 62, "accent", "accent", 1, r=10)
+    ic_lock(d, 948, 356, "white", "white")
+    d.text(976, 351, "POLICY GATE · ZERO TRUST", 12, "white", weight=600, mono=True)
+    d.text(976, 369, "untrusted data → human approval", 11, "white")
     badge(d, 1204, 332, "L4", True)
     d.line([(1165, 306), (1165, 322)], "ink")
     tile(d, 918, 404, 158, 84, "JUDGE")
@@ -673,14 +674,14 @@ def topology(mode):
     badge(d, 1192, 510, "BASE")
 
     # Models + SOC -----------------------------------------------------------------------
-    zone_h(d, 1288, 40, 136, 270, "MODELS")
+    zone_h(d, 1288, 40, 136, 270, "MODELS", "sand")
     ic_chip(d, 1356, 112); label(d, 1356, 148, "Hosted LLM")
     ic_server(d, 1356, 206); label(d, 1356, 242, "Local LLM", "on-prem")
     d.text(1356, 280, "tokens in,", 10.5, "untrust", "middle", 600, mono=True)
     d.text(1356, 294, "facts out", 10.5, "untrust", "middle", 600, mono=True)
     d.line([(1244, 150), (1286, 150)], "ink")
     d.line([(1286, 186), (1246, 186)], "muted")
-    zone_h(d, 1288, 330, 136, 278, "SOC TEAM")
+    zone_h(d, 1288, 330, 136, 278, "SOC TEAM", "sand")
     ic_monitor(d, 1356, 400); label(d, 1356, 436, "Console", "live queue")
     ic_user(d, 1356, 512); label(d, 1356, 546, "Analyst", "approves")
     d.line([(1244, 356), (1286, 392)], "ink")

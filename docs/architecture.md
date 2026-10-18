@@ -1,13 +1,15 @@
 # Architecture
 
-Prahari is a pipeline of five planes. One rule ties them together: **untrusted data may inform a decision, but it may never make one.**
+Vahini brings zero trust and defense in depth into the AI-powered SOC. The decisions behind it are in [adr/](adr/).
+
+Vahini is a pipeline of five planes. One rule ties them together: **untrusted data may inform a decision, but it may never make one.**
 
 ## 1. Trust model
 
 | Source | Trusted? | Examples |
 |---|---|---|
 | `ANALYST` | yes | What a human types in the console |
-| `SYSTEM` | yes | Playbooks, asset inventory (CMDB), change tickets, Prahari config |
+| `SYSTEM` | yes | Playbooks, asset inventory (CMDB), change tickets, Vahini config |
 | `TELEMETRY` | **no** | Every SIEM/EDR alert field, including the "harmless" ones (user-agent, username, command line, email subject) |
 | `EXTERNAL` | **no** | Threat-intel feeds, web lookups |
 | `QUARANTINED_LLM` | **no** | Anything a model produced after reading untrusted data |
@@ -66,7 +68,7 @@ This is the plane that carries the guarantee. The worst case is a fully fooled p
 
 ![Judge and ledger](diagrams/judge.svg)
 
-Following AIDA (Strategist / Executor / Adversary / Judge), Prahari works in four steps:
+Following AIDA (Strategist / Executor / Adversary / Judge), Vahini works in four steps:
 
 1. **Adversary.** For each alert category, the adversary raises attack hypotheses from a SYSTEM-trusted list. On hackathon day an LLM extends this list.
 2. **Executor.** It runs queries: SIEM, EDR, CMDB, change management.
@@ -79,7 +81,7 @@ Following AIDA (Strategist / Executor / Adversary / Judge), Prahari works in fou
 
 *Densities and thresholds come from the seeded demo calibration, not real data.*
 
-The scorer is, on hackathon day, an LLM verdict vote share over k samples, combined with intel and asset criticality. It produces `s ∈ [0,1]`. Prahari calibrates two thresholds on labelled history:
+The scorer is, on hackathon day, an LLM verdict vote share over k samples, combined with intel and asset criticality. It produces `s ∈ [0,1]`. Vahini calibrates two thresholds on labelled history:
 
 - **`close_below = s₍ₖ₎`.** Here k = ⌊α(n+1)⌋ over n known-malicious scores. For any new true positive exchangeable with that history, `P(s < close_below) ≤ α`.
 - **`escalate_above`.** This is the same construction on benign scores at level β, which bounds how many benign alerts page on-call.
@@ -95,7 +97,7 @@ This plane consumes OTel GenAI spans (`chat`, `execute_tool`; `gen_ai.tool.name`
 - **AGENT-001.** A sensitive tool (egress, exec, state change) is called with an indicator that only untrusted tool output supplied. Maps to OWASP ASI01 Goal Hijack / ASI02 Tool Misuse and ATLAS AML.T0086 (exfiltration via agent tool invocation).
 - **AGENT-002.** Tool output contains instructions aimed at the agent.
 
-These alerts enter the same triage pipeline. To Prahari, an AI agent is just another monitored asset.
+These alerts enter the same triage pipeline. To Vahini, an AI agent is just another monitored asset.
 
 ## 3. Correlation (`correlate.py`)
 
@@ -111,7 +113,7 @@ Sanitisation runs at the customer edge, so the tenant key never leaves the custo
 
 
 ```
-customer site / VPC                          Prahari service
+customer site / VPC                          Vahini service
 ┌───────────────────────────────┐            ┌────────────────────────────┐
 │ Wazuh / Elastic / M365        │            │ ingest queue (tokens only) │
 │ OTel collector (agents)       │            │ quarantined LLM  planner   │
@@ -124,7 +126,29 @@ customer site / VPC                          Prahari service
 - Wazuh integration uses its REST API / an MCP server. Actions go back through the customer-side executor, the only component that holds the vault.
 - Model backends are pluggable: Claude, GPT, or local (Qwen / Llama via vLLM) for customers that require on-prem.
 
-## 5. What we measure on hackathon day
+## 5. The always-on agent mesh (`agents.py`)
+
+Scripts fire one fixed step when a rule matches. The mesh keeps running instead. It pulls alerts and AI-agent traces off a queue, runs each through every layer, correlates it with what came before, and then:
+
+- runs what the policy gate allows (low risk, trusted inputs) through the customer-side executor,
+- parks everything else in an approval queue with the reason and the provenance of every argument,
+- writes every step, including analyst approvals and denials, to the case ledger.
+
+The executor is the only component that can turn tokens back into real names, and it lives inside the customer network.
+
+## 6. Connectors (`connectors/`)
+
+- **Wazuh:** reads `alerts.json` (one JSON alert per line) or webhook payloads. It maps rule groups to playbooks, rule level to severity, MITRE tactics to kill-chain stages, and decoder fields (srcip, srcuser, Windows event data) to Vahini's alert shape.
+- **OpenTelemetry:** flattens OTLP/JSON exports (`resourceSpans → scopeSpans → spans`) into the span shape AgentWatch reads, keeping the `gen_ai.*` attributes.
+
+## 7. Models (`llm.py`)
+
+The quarantined reader and the planner work with any model behind a one-method interface. `ClaudeModel` uses the Anthropic SDK with the server-side fallback on. `OllamaModel` runs a local model for customers who can't send even tokenised data off-site. Whatever the model returns, plain code validates it:
+
+- The reader must echo a fresh canary, return JSON, and return only values that match the expected token shapes and actually appear in the data. Anything else is discarded.
+- The planner can only choose tools from the playbook and references it was given. Anything else is dropped.
+
+## 8. What we measure on hackathon day
 
 | Metric | How |
 |---|---|
