@@ -183,7 +183,7 @@ def lifecycle(mode):
     d.text(1080, 314, "score > t_β", 12, "muted", mono=True)
     d.rect(20, 370, 1160, 44, "zone", "line", 1.5, r=10)
     d.text(36, 397, "EVIDENCE LEDGER", 11, "ink", weight=600, mono=True)
-    d.text(170, 397, "every stage appends   prev_hash → sha256(entry)   verify() names the first edited entry", 12,
+    d.text(170, 397, "every layer signs its entry   ·   hash-chained   ·   verify() names the first forged or edited entry", 12,
            "muted", mono=True)
     for x in (528, 676, 824):
         d.line([(x, 300), (x, 368)], "muted", dash=True)
@@ -297,7 +297,7 @@ def judge(mode):
     d.text(980, 128, "H2 open", 12, "muted", mono=True)
     d.text(980, 146, "→ analyst, not auto-close", 12, "muted", mono=True)
 
-    d.text(20, 258, "EVIDENCE LEDGER (APPEND-ONLY, SHA-256 CHAIN)", 11, "muted", weight=600, mono=True)
+    d.text(20, 258, "EVIDENCE LEDGER (APPEND-ONLY, SIGNED, HASH-CHAINED)", 11, "muted", weight=600, mono=True)
     entries = [("0 ingest", "observation", "000000", "a41f9c"), ("1 scanner", "finding", "a41f9c", "77e0b2"),
                ("2 adversary", "hypothesis", "77e0b2", "c3d518"), ("3 executor", "result", "c3d518", "19ab4e"),
                ("4 judge", "verdict", "19ab4e", "e202b8")]
@@ -669,8 +669,8 @@ def topology(mode):
     d.line([(997, 386), (997, 402)], "ink")
     d.line([(1076, 446), (1084, 446)], "ink")
     tile(d, 918, 506, 326, 80, "LEDGER", fill="panel")
-    ic_db(d, 948, 552); d.text(976, 548, "every step recorded", 11.5, "ink", weight=600)
-    d.text(976, 564, "tamper-evident · trust, but verify", 10.5, "muted", mono=True)
+    ic_db(d, 948, 552); d.text(976, 548, "every step signed", 11.5, "ink", weight=600)
+    d.text(976, 564, "non-repudiable · trust, but verify", 10.5, "muted", mono=True)
     badge(d, 1192, 510, "BASE")
 
     # Models + SOC -----------------------------------------------------------------------

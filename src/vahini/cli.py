@@ -24,7 +24,13 @@ def build_mesh() -> AgentMesh:
     key = os.environ.get("VAHINI_TENANT_KEY", "change-me").encode()
     vault = Vault(os.environ.get("VAHINI_TENANT", "default"), key)
     crown = frozenset(filter(None, os.environ.get("VAHINI_CROWN_JEWELS", "").split(",")))
-    vahini = Vahini(gate=gate, policy=Policy(auto_max_risk=Risk.LOW, crown_jewels=crown), vault=vault)
+    try:
+        from .ledger import Keyring
+        keyring = Keyring()
+    except ImportError:          # signatures need vahini[audit]
+        keyring = None
+    vahini = Vahini(gate=gate, policy=Policy(auto_max_risk=Risk.LOW, crown_jewels=crown), vault=vault,
+                    keyring=keyring)
     return AgentMesh(vahini, DryRunExecutor(vault))
 
 

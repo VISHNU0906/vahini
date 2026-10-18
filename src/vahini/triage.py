@@ -23,7 +23,7 @@ from .conformal import ConformalGate, Route
 from .detect import ScanResult, Scanner
 from .policy import Decision, Policy, ProposedAction, Risk, ToolSpec
 from .judge import Judgement, judge
-from .ledger import Ledger
+from .ledger import Keyring, Ledger
 from .privacy import Vault, sanitize_alert
 
 TOOLS = {
@@ -145,6 +145,8 @@ class Vahini:
     vault: Vault | None = None
     # Hosts with an approved change ticket right now (SYSTEM-trusted).
     change_tickets: set[str] = field(default_factory=set)
+    # When set, every ledger entry is signed by the layer that wrote it.
+    keyring: Keyring | None = None
 
     def triage(self, alert: dict[str, Any]) -> TriageReport:
         category = str(alert.get("category", "unknown"))
@@ -174,7 +176,7 @@ class Vahini:
         route = self.gate.route(score)
 
         alert_id = str(alert.get("id", "?"))
-        ledger = Ledger(alert_id)
+        ledger = Ledger(alert_id, keyring=self.keyring)
         ts = float(alert.get("ts", 0))
         ledger.append("ingest", "observation", {"category": category, "secrets_removed": removed}, ts)
         for key, res in injection.items():

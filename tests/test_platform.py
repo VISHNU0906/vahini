@@ -198,3 +198,53 @@ def test_http_api_end_to_end():
     assert pending and pending[0]["provenance"]["ip"] == ["q_llm", "telemetry"]
     done = client.post(f"/v1/approvals/{pending[0]['id']}", json={"decision": "deny", "analyst": "a"}).json()
     assert done == {"result": "denied"}
+
+
+# --- non-repudiation -----------------------------------------------------------------------
+
+def _signed_mesh():
+    pytest.importorskip("cryptography")
+    from vahini.ledger import Keyring
+    vault = Vault("vishnu-org", b"k")
+    return AgentMesh(Vahini(gate=ConformalGate(0.3, 0.6), vault=vault, keyring=Keyring()), DryRunExecutor(vault))
+
+
+def test_every_entry_is_signed_by_the_layer_that_wrote_it():
+    mesh = _signed_mesh()
+    rep = mesh.handle_alert(json.loads((EX / "alerts.json").read_text())[1])
+    assert all(e.signer == e.actor and e.signature for e in rep.ledger.entries)
+    assert {"scanner", "adversary", "policy", "judge"} <= {e.actor for e in rep.ledger.entries}
+    assert rep.ledger.verify() == (True, None)
+
+
+def test_auditor_verifies_with_public_keys_only():
+    mesh = _signed_mesh()
+    rep = mesh.handle_alert(json.loads((EX / "alerts.json").read_text())[0])
+    pid = next(iter(mesh.approvals))
+    mesh.approve(pid, "asha@vishnu.corp")
+    public = mesh.vahini.keyring.export_public()
+    assert "analyst:asha@vishnu.corp" in public
+    assert rep.ledger.verify(public) == (True, None)
+
+
+def test_rewritten_entry_with_fresh_hash_still_fails_signature():
+    from dataclasses import replace
+    from vahini.ledger import _digest
+    mesh = _signed_mesh()
+    rep = mesh.handle_alert(json.loads((EX / "alerts.json").read_text())[0])
+    public = mesh.vahini.keyring.export_public()
+    # An insider rewrites the last entry and recomputes its hash, but cannot forge the signature.
+    e = rep.ledger.entries[-1]
+    body = {**e.body, "route": "auto_close"}
+    rep.ledger.entries[-1] = replace(e, body=body, digest=_digest(e.seq, e.ts, e.actor, e.kind, body, e.prev))
+    assert rep.ledger.verify(public) == (False, len(rep.ledger.entries) - 1)
+
+
+def test_unsigned_entry_is_rejected_when_keys_are_given():
+    mesh = _signed_mesh()
+    rep = mesh.handle_alert(json.loads((EX / "alerts.json").read_text())[0])
+    public = mesh.vahini.keyring.export_public()
+    rep.ledger.keyring = None
+    rep.ledger.append("judge", "verdict", {"route": "auto_close"})
+    ok, bad = rep.ledger.verify(public)
+    assert not ok and bad == len(rep.ledger.entries) - 1

@@ -118,13 +118,13 @@ class AgentMesh:
     def approve(self, approval_id: str, analyst: str) -> str:
         p = self.approvals.pop(approval_id)
         result = self.executor.run(p.action.tool.name, {k: str(v.value) for k, v in p.action.args.items()})
-        self.cases[p.case_id].ledger.append("analyst", "approved",
+        self.cases[p.case_id].ledger.append(f"analyst:{analyst}", "approved",
                                             {"id": approval_id, "by": analyst, "result": result})
         return result
 
     def deny(self, approval_id: str, analyst: str, note: str = "") -> None:
         p = self.approvals.pop(approval_id)
-        self.cases[p.case_id].ledger.append("analyst", "denied", {"id": approval_id, "by": analyst, "note": note})
+        self.cases[p.case_id].ledger.append(f"analyst:{analyst}", "denied", {"id": approval_id, "by": analyst, "note": note})
 
     # --- always on ----------------------------------------------------------------------
     async def submit(self, kind: str, payload: Any) -> None:

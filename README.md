@@ -12,7 +12,7 @@ Vahini (वाहिनी, "a force") is an AI SOC built by Team Zenith for Cyb
 
 ## The problem
 
-Security teams are handing alert triage to AI. That's the right move. But the AI reads usernames, browser strings, emails and command lines all day, and attackers can write into every one of them.
+AI is being used in SOC. But nobody is considering the attack surface AI brings to the table. Security teams are handing alert triage to AI, and that's the right move. But the AI reads usernames, browser strings, emails and command lines all day, and attackers can write into every one of them.
 
 AI can be manipulated. It can hallucinate. It can be attacked. Today it is trusted like an insider anyway.
 
@@ -40,13 +40,13 @@ Vahini brings zero trust and defense in depth into the AI-powered SOC. Nothing i
 | 5. Prove before closing | An alert closes only when trusted evidence rules out every attack theory. | silence read as safety |
 | 6. Bound the autonomy | The AI auto-closes only below a ceiling your SOC lead sets. | confident and wrong |
 | 7. Watch the agents | Your own AI agents are monitored with the same rules, in the same queue. | unwatched AI agents |
-| Base. Record everything | Every step goes into a tamper-evident ledger. | unverifiable decisions |
+| Base. Sign everything | Every layer signs what it did into a hash-chained ledger (Ed25519). Nobody can deny it or quietly rewrite it. | repudiation |
 
-**No action is taken unless it has passed layers of authentic, validated findings.**
+**No action is taken without validated findings across multiple layers.** All it takes is one bad alert, so we make it non-repudiable at every layer of the stack. Attackers can manipulate AI, but not us!
 
 ## From scripts to agents
 
-SOC automation used to mean scripts: one fixed step when a rule fires. Vahini runs AI agents that never stop. They read context, take contextual action, mitigation and remediation, and stay fenced in by zero trust. Low-risk work on trusted data happens on its own. Everything else waits for a person, with the reason attached.
+Scripts are static in nature. Agents can take contextual action, remediation and response. Vahini runs AI agents that never stop. They read context, act, remediate and respond, and stay fenced in by zero trust. Low-risk work on trusted data happens on its own. Everything else waits for a person, with the reason attached.
 
 ![One alert, end to end](docs/diagrams/lifecycle.svg)
 
@@ -64,7 +64,7 @@ pytest -q
 To run the API (and the always-on agent mesh behind it):
 
 ```bash
-pip install -e ".[service]"
+pip install -e ".[service,audit]"
 export VAHINI_TENANT=vishnu-org VAHINI_TENANT_KEY=... VAHINI_CROWN_JEWELS=SAP-FIN-DB
 vahini serve --port 8080
 ```
@@ -76,7 +76,8 @@ vahini serve --port 8080
 | `GET /v1/cases/{id}` | Verdict, route, actions and the verified ledger |
 | `GET /v1/incidents` | Correlated incidents, most advanced kill chain first |
 | `GET /v1/approvals` | Actions waiting for an analyst, with the provenance of every argument |
-| `POST /v1/approvals/{id}` | Approve or deny |
+| `POST /v1/approvals/{id}` | Approve or deny (signed with the analyst's key) |
+| `GET /v1/keys` | Public keys, so auditors can verify every ledger entry |
 
 With Docker: copy `.env.example` to `.env`, then `docker compose up`.
 
@@ -94,7 +95,7 @@ src/vahini/
   judge.py          layer 5  no benign verdict while an attack theory is open
   conformal.py      layer 6  auto-close ceiling with a provable bound
   agentwatch.py     layer 7  injection-steered tool calls in your own AI agents
-  ledger.py         base     hash-chained evidence ledger
+  ledger.py         base     signed (Ed25519), hash-chained evidence ledger
   canary.py                  known-answer check on every reader call
   correlate.py               alerts -> incidents, ranked by kill-chain stage
   triage.py                  the pipeline that ties the layers together

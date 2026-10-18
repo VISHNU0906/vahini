@@ -6,6 +6,7 @@
     GET  /v1/incidents           correlated incidents, most advanced first
     GET  /v1/approvals           actions waiting for an analyst
     POST /v1/approvals/{id}      {"decision": "approve" | "deny", "analyst": "...", "note": "..."}
+    GET  /v1/keys                public keys, so auditors can verify every signed ledger entry
     GET  /healthz
 """
 
@@ -53,8 +54,14 @@ def create_app(mesh: AgentMesh):
             "actions": [{"tool": a.tool.name, "decision": d.value, "reasons": r} for a, d, r in rep.actions],
             "ledger": {"intact": ok, "first_bad": bad,
                        "entries": [{"seq": e.seq, "actor": e.actor, "kind": e.kind, "body": e.body,
-                                    "hash": e.digest} for e in rep.ledger.entries]},
+                                    "hash": e.digest, "signer": e.signer, "signature": e.signature}
+                                   for e in rep.ledger.entries]},
         }
+
+    @app.get("/v1/keys")
+    def keys() -> dict[str, str]:
+        kr = mesh.vahini.keyring
+        return kr.export_public() if kr is not None else {}
 
     @app.get("/v1/incidents")
     def incidents() -> list[dict[str, Any]]:
