@@ -3,23 +3,24 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "prahari"
-version = "0.1.0"
-description = "Agentic SOC copilot that cannot be talked out of an alert: provenance-enforced, privacy-preserving, conformally gated."
+name = "vahini"
+version = "0.2.0"
+description = "An AI-powered SOC that cannot be manipulated: zero trust and defense in depth for the AI itself."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "Apache-2.0" }
-authors = [{ name = "Vishnu Kosuri" }]
+authors = [{ name = "Team Zenith" }]
 dependencies = []
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
-# Layer-2 classifier (Llama Prompt Guard 2) and LLM planner backends.
+service = ["fastapi>=0.110", "uvicorn>=0.29", "httpx>=0.27"]
+llm = ["anthropic>=0.121"]
+# Layer-2 classifier (Llama Prompt Guard 2).
 ml = ["transformers>=4.44", "torch>=2.3"]
-llm = ["anthropic>=0.40", "openai>=1.50"]
 
 [project.scripts]
-prahari-demo = "prahari.demo:main"
+vahini = "vahini.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
