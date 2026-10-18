@@ -17,6 +17,8 @@ Values are wrapped in `Labeled(value, sources, readers)` (`capability.py`). Tain
 
 ## 2. The planes
 
+![Alert lifecycle](diagrams/lifecycle.svg)
+
 ### 2.1 Detection, layer 1 (`detect.py`)
 This layer runs on **raw** text before anything rewrites it. It has two detectors:
 
@@ -31,6 +33,9 @@ Scores combine by noisy-OR. Layers 2 and 3 plug into the same `Detector` protoco
 **Design stance.** *The Attacker Moves Second* (arXiv:2510.09023) broke 12 published detectors and model-level defenses at 71–100% ASR. Detection here is therefore **evidence**, not the security boundary. A detected injection does two things: it raises the alert's score (tampering with an alert is itself a sign of intrusion), and it forbids auto-close. Safety does not depend on catching it.
 
 ### 2.2 Privacy (`privacy.py`)
+
+![Privacy plane](diagrams/privacy.svg)
+
 - **Identifiers become tenant-keyed tokens.** Users, hosts, IPs and emails are replaced with `HMAC-SHA256(tenant_key, kind‖value)` tokens.
   - IPv4 tokens carry a /24 prefix token, so subnet relationships survive.
   - Identifiers from structured fields are also replaced wherever they appear in free text.
@@ -39,6 +44,11 @@ Scores combine by noisy-OR. Layers 2 and 3 plug into the same `Detector` protoco
 - **Why this works for an MSSP.** The same person gets different tokens at different customers, so tenants never link up. And the models (cloud or local) never receive personal data in clear, which is a concrete technical measure under the DPDP Act / Rules 2025.
 
 ### 2.3 Provenance (`triage.py`, `policy.py`, `canary.py`)
+
+![Taint propagation](diagrams/taint.svg)
+
+![Policy engine](diagrams/policy.svg)
+
 This plane follows the dual-LLM / CaMeL pattern:
 
 - **Quarantined LLM.** It reads sanitised untrusted text and returns *typed values only* (IPs, users, hosts, hashes), validated against a JSON schema. Every call carries a fresh **canary** token that must come back intact in a dedicated field. A missing, altered or leaked canary quarantines the output.
@@ -53,6 +63,9 @@ This plane follows the dual-LLM / CaMeL pattern:
 This is the plane that carries the guarantee. The worst case is a fully fooled planner proposing `allowlist_ip(attacker_ip)`. The engine sees that `ip` derives from `TELEMETRY` and routes it to an analyst.
 
 ### 2.4 Investigation (`judge.py`, `ledger.py`)
+
+![Judge and ledger](diagrams/judge.svg)
+
 Following AIDA (Strategist / Executor / Adversary / Judge), Prahari works in four steps:
 
 1. **Adversary.** For each alert category, the adversary raises attack hypotheses from a SYSTEM-trusted list. On hackathon day an LLM extends this list.
@@ -61,6 +74,11 @@ Following AIDA (Strategist / Executor / Adversary / Judge), Prahari works in fou
 4. **Ledger.** Every observation, finding, hypothesis, query, policy decision and verdict is appended to a SHA-256 hash chain. `Ledger.verify()` pinpoints the first tampered entry. The ledger is the audit trail for CERT-In incident reports, ISO 27001 A.5.25–5.28 and SOC 2 CC7.
 
 ### 2.5 Assurance (`conformal.py`)
+
+![Conformal gate](diagrams/conformal.svg)
+
+*Densities and thresholds come from the seeded demo calibration, not real data.*
+
 The scorer is, on hackathon day, an LLM verdict vote share over k samples, combined with intel and asset criticality. It produces `s ∈ [0,1]`. Prahari calibrates two thresholds on labelled history:
 
 - **`close_below = s₍ₖ₎`.** Here k = ⌊α(n+1)⌋ over n known-malicious scores. For any new true positive exchangeable with that history, `P(s < close_below) ≤ α`.
@@ -69,6 +87,9 @@ The scorer is, on hackathon day, an LLM verdict vote share over k samples, combi
 Everything in between goes to an analyst. This gives the SOC lead a dial with a written guarantee ("at most 1% of real attacks are auto-closed"), not a vendor accuracy claim. The guarantee needs exchangeability, so the gate is recalibrated weekly per tenant per category, and drift monitoring (score distribution shift) triggers recalibration early.
 
 ### 2.6 AgentWatch (`agentwatch.py`)
+
+![AgentWatch](diagrams/agentwatch.svg)
+
 This plane consumes OTel GenAI spans (`chat`, `execute_tool`; `gen_ai.tool.name`, `gen_ai.tool.call.arguments`, `gen_ai.tool.call.result`, `gen_ai.input.messages`). It tracks which indicators (URLs, emails, IPs) entered the trace through **user** messages and which through **tool output**, and raises two rules:
 
 - **AGENT-001.** A sensitive tool (egress, exec, state change) is called with an indicator that only untrusted tool output supplied. Maps to OWASP ASI01 Goal Hijack / ASI02 Tool Misuse and ATLAS AML.T0086 (exfiltration via agent tool invocation).
@@ -77,18 +98,27 @@ This plane consumes OTel GenAI spans (`chat`, `execute_tool`; `gen_ai.tool.name`
 These alerts enter the same triage pipeline. To Prahari, an AI agent is just another monitored asset.
 
 ## 3. Correlation (`correlate.py`)
+
+![Correlation](diagrams/correlation.svg)
+
 Alerts that share an entity (host, user, source IP) within a window are grouped with union-find. Each incident is ranked by kill-chain progression (distinct ATT&CK tactics) before volume, so a quiet three-stage intrusion outranks a loud scan. Correlation runs on tokens, so it never needs raw identifiers.
 
 ## 4. Deployment shape (target)
 
+![System context](diagrams/context.svg)
+
+Sanitisation runs at the customer edge, so the tenant key never leaves the customer's network.
+
+
 ```
-customer site / VPC                     Prahari cloud (or same VPC)
-┌──────────────────────────┐            ┌────────────────────────────┐
-│ Wazuh / Elastic / M365   │──alerts──▶ │ L1 scan ▶ sanitize ▶ queue │
-│ OTel collector (agents)  │──spans───▶ │ quarantined LLM  planner   │
-│ Vault: key + reverse map │◀──actions──│ policy ▶ judge ▶ gate      │
-│ Executor (SOAR actions)  │            │ ledger store, console      │
-└──────────────────────────┘            └────────────────────────────┘
+customer site / VPC                          Prahari service
+┌───────────────────────────────┐            ┌────────────────────────────┐
+│ Wazuh / Elastic / M365        │            │ ingest queue (tokens only) │
+│ OTel collector (agents)       │            │ quarantined LLM  planner   │
+│ edge sanitiser: L1 scan, HMAC │──tokens───▶│ policy ▶ judge ▶ gate      │
+│ vault: key + reverse map      │◀──actions──│ ledger store, console      │
+│ executor (SOAR actions)       │            └────────────────────────────┘
+└───────────────────────────────┘
 ```
 
 - Wazuh integration uses its REST API / an MCP server. Actions go back through the customer-side executor, the only component that holds the vault.
