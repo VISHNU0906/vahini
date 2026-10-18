@@ -323,7 +323,7 @@ def _beta_pdf(x, a, b):
 
 
 def conformal(mode, t_lo=0.359, t_hi=0.512):
-    d = D("conformal", 1060, 400, "Conformal gate: score densities of benign and malicious alerts with the two calibrated "
+    d = D("conformal", 1060, 430, "Conformal gate: score densities of benign and malicious alerts with the two calibrated "
           "thresholds; at most alpha of real attacks fall in the auto-close zone and at most beta of benign alerts "
           "page on-call.", mode)
     x0, x1, y0, y1, ymax = 70, 1010, 320, 50, 3.6
@@ -368,8 +368,8 @@ def conformal(mode, t_lo=0.359, t_hi=0.512):
     d.text(sx((t_hi + 1) / 2), y0 - 12, "ESCALATE", 12, "untrust", "middle", 600, mono=True)
     d.text(sx(0.16), sy(3.15), "benign alerts", 13, "trust", "middle", 600)
     d.text(sx(0.86), sy(3.15), "real attacks", 13, "untrust", "middle", 600)
-    d.text(sx(0.34), sy(1.0), "≤ α of attacks below t_α", 12, "untrust", "end")
-    d.text(sx(0.53), sy(1.0), "≤ β of benign above t_β", 12, "trust", "start")
+    d.text((x0 + x1) / 2, y0 + 74, "shaded tails:  at most α of real attacks fall below t_α   ·   at most β of benign alerts rise above t_β",
+           12, "muted", "middle", mono=True)
     return d
 
 
@@ -434,7 +434,264 @@ def correlation(mode):
     return d
 
 
-FIGURES = [context, lifecycle, taint, policy, privacy, judge, conformal, agentwatch, correlation]
+# --- icons for the enterprise topology -----------------------------------------
+def _p(d, path, fill="panel", stroke="ink", sw=1.6):
+    d.raw(f'<path d="{path}" style="fill:{d.c(fill)};stroke:{d.c(stroke)};stroke-width:{sw};stroke-linejoin:round"/>')
+
+
+def _c(d, cx, cy, r, fill="panel", stroke="ink", sw=1.6):
+    d.raw(f'<circle cx="{cx}" cy="{cy}" r="{r}" style="fill:{d.c(fill)};stroke:{d.c(stroke)};stroke-width:{sw}"/>')
+
+
+def _l(d, x1, y1, x2, y2, stroke="ink", sw=1.4):
+    d.raw(f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" style="stroke:{d.c(stroke)};stroke-width:{sw}"/>')
+
+
+def ic_server(d, x, y):
+    d.rect(x - 14, y - 18, 28, 36, "panel", "ink", 1.6, r=3)
+    for yy in (y - 7, y + 4):
+        _l(d, x - 14, yy, x + 14, yy)
+    for yy in (y - 12, y - 1, y + 10):
+        _c(d, x + 8, yy, 1.6, "ink", "ink", 0)
+
+
+def ic_laptop(d, x, y):
+    d.rect(x - 17, y - 15, 34, 22, "panel", "ink", 1.6, r=2)
+    _p(d, f"M{x-22},{y+10} L{x+22},{y+10} L{x+18},{y+15} L{x-18},{y+15} Z")
+
+
+def ic_cloud(d, x, y, fill="panel"):
+    _p(d, f"M{x-24},{y+12} A11,11 0 0 1 {x-20},{y-6} A15,15 0 0 1 {x+8},{y-12} A11,11 0 0 1 {x+22},{y}"
+          f" A7,7 0 0 1 {x+22},{y+12} Z", fill)
+
+
+def ic_bot(d, x, y, fill="panel", stroke="ink"):
+    _l(d, x, y - 11, x, y - 17, stroke)
+    _c(d, x, y - 19, 2.6, stroke, stroke, 0)
+    d.rect(x - 15, y - 11, 30, 24, fill, stroke, 1.6, r=6)
+    _c(d, x - 6, y + 1, 2.6, stroke, stroke, 0)
+    _c(d, x + 6, y + 1, 2.6, stroke, stroke, 0)
+
+
+def ic_user(d, x, y, fill="panel", stroke="ink"):
+    _c(d, x, y - 9, 7, fill, stroke)
+    _p(d, f"M{x-13},{y+14} Q{x-13},{y+1} {x},{y+1} Q{x+13},{y+1} {x+13},{y+14} Z", fill, stroke)
+
+
+def ic_globe(d, x, y, r=16):
+    _c(d, x, y, r)
+    d.raw(f'<ellipse cx="{x}" cy="{y}" rx="{r*0.45}" ry="{r}" style="fill:none;stroke:{d.c("ink")};stroke-width:1.3"/>')
+    _l(d, x - r, y, x + r, y, sw=1.2)
+
+
+def ic_mail(d, x, y, stroke="ink"):
+    d.rect(x - 16, y - 11, 32, 22, "panel", stroke, 1.6, r=2)
+    _p(d, f"M{x-16},{y-11} L{x},{y+2} L{x+16},{y-11}", "panel", stroke)
+
+
+def ic_db(d, x, y):
+    _p(d, f"M{x-14},{y-12} V{y+12} A14,5 0 0 0 {x+14},{y+12} V{y-12}")
+    d.raw(f'<ellipse cx="{x}" cy="{y-12}" rx="14" ry="5" style="fill:{d.c("panel")};stroke:{d.c("ink")};stroke-width:1.6"/>')
+    _p(d, f"M{x-14},{y} A14,5 0 0 0 {x+14},{y}", "panel")
+
+
+def ic_shield(d, x, y, fill="panel", stroke="ink"):
+    _p(d, f"M{x},{y-18} L{x+15},{y-12} L{x+15},{y} Q{x+15},{y+13} {x},{y+19} Q{x-15},{y+13} {x-15},{y} L{x-15},{y-12} Z",
+       fill, stroke)
+    _p(d, f"M{x-6},{y} L{x-1},{y+6} L{x+7},{y-6}", "panel" if fill != "panel" else "panel", stroke, 2)
+
+
+def ic_key(d, x, y, stroke="ink"):
+    _c(d, x - 9, y, 7, "panel", stroke)
+    _l(d, x - 2, y, x + 16, y, stroke, 2)
+    _l(d, x + 10, y, x + 10, y + 6, stroke, 2)
+    _l(d, x + 15, y, x + 15, y + 5, stroke, 2)
+
+
+def ic_gear(d, x, y, stroke="ink"):
+    for i in range(8):
+        a = i * math.pi / 4
+        _l(d, x + 11 * math.cos(a), y + 11 * math.sin(a), x + 16 * math.cos(a), y + 16 * math.sin(a), stroke, 3.2)
+    _c(d, x, y, 11, "panel", stroke)
+    _c(d, x, y, 4, "panel", stroke)
+
+
+def ic_lock(d, x, y, stroke="ink", fill="panel"):
+    _p(d, f"M{x-8},{y-3} V{y-9} A8,8 0 0 1 {x+8},{y-9} V{y-3}", "none" if False else fill, stroke, 2)
+    d.rect(x - 12, y - 3, 24, 19, fill, stroke, 1.6, r=3)
+    _c(d, x, y + 6, 2.4, stroke, stroke, 0)
+
+
+def ic_firewall(d, x, y):
+    d.rect(x - 16, y - 14, 32, 28, "untrust-soft", "untrust", 1.8, r=2)
+    for yy in (y - 5, y + 4):
+        _l(d, x - 16, yy, x + 16, yy, "untrust", 1.2)
+    for xx, y1, y2 in ((x - 4, y - 14, y - 5), (x + 8, y - 14, y - 5), (x - 10, y - 5, y + 4), (x + 3, y - 5, y + 4),
+                       (x - 4, y + 4, y + 14), (x + 8, y + 4, y + 14)):
+        _l(d, xx, y1, xx, y2, "untrust", 1.2)
+
+
+def ic_chip(d, x, y):
+    for k in (-7, 0, 7):
+        _l(d, x + k, y - 18, x + k, y - 13); _l(d, x + k, y + 13, x + k, y + 18)
+        _l(d, x - 18, y + k, x - 13, y + k); _l(d, x + 13, y + k, x + 18, y + k)
+    d.rect(x - 13, y - 13, 26, 26, "panel", "ink", 1.6, r=3)
+    d.rect(x - 6, y - 6, 12, 12, "ink", "ink", 1, r=1)
+
+
+def ic_monitor(d, x, y):
+    d.rect(x - 19, y - 14, 38, 25, "panel", "ink", 1.6, r=2)
+    _l(d, x, y + 11, x, y + 17, sw=2); _l(d, x - 9, y + 17, x + 9, y + 17, sw=2)
+    d.raw(f'<polyline points="{x-12},{y+2} {x-5},{y-4} {x+1},{y+1} {x+11},{y-8}" '
+          f'style="fill:none;stroke:{d.c("untrust")};stroke-width:1.6"/>')
+
+
+def badge(d, x, y, s, on_dark=False):
+    w = 8 * len(s) + 12
+    d.rect(x, y, w, 18, "bg" if on_dark else "ink", "bg" if on_dark else "ink", 1, r=4)
+    d.text(x + w / 2, y + 13, s, 10, "ink" if on_dark else "bg", "middle", 600, mono=True)
+
+
+def tile(d, x, y, w, h, title, dark_header=False, fill="panel"):
+    d.rect(x, y, w, h, fill, "line", 1.3, r=8)
+    d.rect(x, y, w, 24, "ink" if dark_header else "accent-soft", "ink" if dark_header else "line", 1, r=8)
+    d.rect(x, y + 12, w, 12, "ink" if dark_header else "accent-soft", "ink" if dark_header else "accent-soft", 0, r=0)
+    d.text(x + 12, y + 17, title, 10.5, "bg" if dark_header else "ink", weight=600, mono=True)
+
+
+def zone_h(d, x, y, w, h, title):
+    d.rect(x, y, w, h, "zone", "ink", 1.4, r=12, dash="6 4")
+    d.rect(x, y, w, 30, "ink", "ink", 1, r=12)
+    d.rect(x, y + 15, w, 15, "ink", "ink", 0, r=0)
+    d.text(x + 14, y + 20, title, 11.5, "bg", weight=600, mono=True)
+
+
+def label(d, x, y, s, sub=None, anchor="middle"):
+    d.text(x, y, s, 11.5, "ink", anchor, 600)
+    if sub:
+        d.text(x, y + 14, sub, 10.5, "muted", anchor, mono=True)
+
+
+def topology(mode):
+    d = D("topology", 1440, 760, "Enterprise topology: every network segment streams telemetry to the SIEM; the edge "
+          "sanitiser scans and tokenises it inside the customer network; only tokens cross the egress firewall to "
+          "Prahari's always-on agent mesh, which works through layered checks; approved actions return to the "
+          "customer's own SOAR executor.", mode)
+    # Internet -------------------------------------------------------------------------------
+    zone_h(d, 16, 40, 150, 680, "INTERNET")
+    ic_user(d, 91, 118, "untrust", "untrust"); label(d, 91, 152, "Attacker", "AI-assisted")
+    ic_mail(d, 91, 250, "untrust"); label(d, 91, 282, "Phishing email")
+    ic_globe(d, 91, 370); label(d, 91, 402, "Web traffic")
+    ic_laptop(d, 91, 492); label(d, 91, 524, "Remote staff", "via VPN")
+    d.line([(91, 166), (91, 234)], "untrust", dash=True)
+    d.line([(91, 182), (148, 170), (176, 166)], "untrust", dash=True)
+    for yy in (250, 370, 492):
+        d.line([(118, yy), (176, 172)], "muted", head=False, sw=1.2)
+    d.text(91, 600, "poisoned input", 10.5, "untrust", "middle", 600, mono=True)
+    d.text(91, 614, "via normal channels", 10.5, "untrust", "middle", mono=True)
+    # perimeter firewall
+    ic_firewall(d, 198, 166); d.text(198, 140, "perimeter", 10, "untrust", "middle", mono=True)
+    d.line([(214, 166), (248, 166)], "muted")
+
+    # Enterprise ---------------------------------------------------------------------------
+    zone_h(d, 232, 40, 612, 680, "VISHNU ORG · vishnu.corp · ENTERPRISE NETWORK")
+    tile(d, 250, 82, 280, 150, "DMZ")
+    ic_server(d, 330, 152); label(d, 330, 192, "BLR-WEB-01", "public site")
+    ic_server(d, 450, 152); label(d, 450, 192, "BLR-VPN-01", "remote access")
+    tile(d, 546, 82, 280, 150, "CORP LAN")
+    ic_laptop(d, 598, 150); label(d, 598, 192, "FIN-LT-044", "finance")
+    ic_laptop(d, 686, 150); label(d, 686, 192, "HR-LT-012", "hr")
+    ic_laptop(d, 774, 150); label(d, 774, 192, "ENG-WS-207", "engineering")
+    tile(d, 250, 246, 280, 150, "DATA CENTER")
+    ic_server(d, 330, 316); label(d, 330, 356, "VISH-DC01", "active directory")
+    ic_db(d, 450, 316); label(d, 450, 356, "SAP-FIN-DB", "crown jewel")
+    tile(d, 546, 246, 280, 150, "CLOUD + AI")
+    ic_cloud(d, 630, 318); label(d, 630, 356, "M365 · AWS", "cloud tenants")
+    ic_bot(d, 742, 318); label(d, 742, 356, "helpdesk-bot", "AI agent")
+    # telemetry bus
+    d.rect(250, 414, 576, 46, "panel", "ink", 1.6, r=8)
+    _c(d, 272, 437, 5, "untrust", "untrust", 0)
+    d.text(284, 441, "LIVE", 10.5, "untrust", weight=600, mono=True)
+    d.text(330, 441, "SIEM · EDR · OTel  —  every segment streams events in real time", 12, "ink", weight=600)
+    for xx in (390, 686):
+        d.line([(xx, 396), (xx, 412)], "ink")
+    # edge sanitiser
+    d.rect(250, 478, 576, 72, "ink", "ink", 1, r=8)
+    ic_shield(d, 284, 514, "panel", "ink")
+    d.text(314, 507, "EDGE SANITISER", 12, "bg", weight=600, mono=True)
+    d.text(314, 527, "scan raw text · tokenise identities · strip secrets", 11.5, "bg")
+    badge(d, 730, 490, "L1", True); badge(d, 768, 490, "L2", True)
+    d.line([(538, 460), (538, 476)], "ink")
+    # vault + executor
+    tile(d, 250, 568, 280, 76, "VAULT")
+    ic_key(d, 284, 614); d.text(312, 611, "tenant key + token map", 11.5, "ink", weight=600)
+    d.text(312, 627, "never leaves the network", 10.5, "muted", mono=True)
+    tile(d, 546, 568, 280, 76, "SOAR EXECUTOR")
+    ic_gear(d, 580, 614); d.text(608, 611, "isolate · reset · block", 11.5, "ink", weight=600)
+    d.text(608, 627, "runs approved actions only", 10.5, "muted", mono=True)
+    d.line([(390, 566), (390, 552)], "ink", "key", 400, 562, anchor="start")
+
+    # egress firewall + tokens
+    d.line([(826, 514), (848, 514)], "ink", head=False, sw=2)
+    ic_firewall(d, 866, 514); d.text(866, 546, "egress", 10, "untrust", "middle", mono=True)
+    d.line([(882, 514), (890, 514), (890, 262), (916, 262)], "ink", sw=2)
+    d.text(866, 566, "tokens", 10.5, "ink", "middle", 600, mono=True)
+    d.text(866, 580, "only", 10.5, "ink", "middle", 600, mono=True)
+
+    # Prahari -------------------------------------------------------------------------------
+    zone_h(d, 900, 40, 362, 568, "PRAHARI · AI SOC · ALWAYS ON")
+    tile(d, 918, 82, 326, 120, "CONTINUOUS AI AGENTS", dark_header=True)
+    for xx, nm in ((962, "Triage"), (1040, "Investigate"), (1118, "Respond"), (1196, "AgentWatch")):
+        ic_bot(d, xx, 142)
+        d.text(xx, 182, nm, 11, "ink", "middle", 600)
+    badge(d, 1214, 112, "L7")
+    d.line([(1080, 202), (1080, 218)], "ink")
+    tile(d, 918, 222, 158, 84, "READER")
+    ic_lock(d, 944, 270); d.text(964, 266, "quarantined", 11.5, "ink", weight=600)
+    d.text(964, 282, "facts only", 10.5, "muted", mono=True); badge(d, 1036, 226, "L3")
+    tile(d, 1086, 222, 158, 84, "PLANNER")
+    ic_bot(d, 1112, 272); d.text(1134, 266, "proposes", 11.5, "ink", weight=600)
+    d.text(1134, 282, "no raw text", 10.5, "muted", mono=True)
+    d.line([(1076, 264), (1084, 264)], "ink")
+    d.rect(918, 324, 326, 62, "ink", "ink", 1, r=8)
+    ic_lock(d, 948, 356, "bg", "ink")
+    d.text(976, 351, "POLICY GATE · ZERO TRUST", 12, "bg", weight=600, mono=True)
+    d.text(976, 369, "untrusted data → human approval", 11, "bg")
+    badge(d, 1204, 332, "L4", True)
+    d.line([(1165, 306), (1165, 322)], "ink")
+    tile(d, 918, 404, 158, 84, "JUDGE")
+    d.text(932, 452, "prove before", 11.5, "ink", weight=600); d.text(932, 468, "close", 11.5, "ink", weight=600)
+    badge(d, 1036, 408, "L5")
+    tile(d, 1086, 404, 158, 84, "AUTONOMY CEILING")
+    d.text(1100, 452, "bounded", 11.5, "ink", weight=600); d.text(1100, 468, "auto-close", 11.5, "ink", weight=600)
+    badge(d, 1204, 436, "L6")
+    d.line([(997, 386), (997, 402)], "ink")
+    d.line([(1076, 446), (1084, 446)], "ink")
+    tile(d, 918, 506, 326, 80, "LEDGER", fill="panel")
+    ic_db(d, 948, 552); d.text(976, 548, "every step recorded", 11.5, "ink", weight=600)
+    d.text(976, 564, "tamper-evident · trust, but verify", 10.5, "muted", mono=True)
+    badge(d, 1192, 510, "BASE")
+
+    # Models + SOC -----------------------------------------------------------------------
+    zone_h(d, 1288, 40, 136, 270, "MODELS")
+    ic_chip(d, 1356, 112); label(d, 1356, 148, "Hosted LLM")
+    ic_server(d, 1356, 206); label(d, 1356, 242, "Local LLM", "on-prem")
+    d.text(1356, 280, "tokens in,", 10.5, "untrust", "middle", 600, mono=True)
+    d.text(1356, 294, "facts out", 10.5, "untrust", "middle", 600, mono=True)
+    d.line([(1244, 150), (1286, 150)], "ink")
+    d.line([(1286, 186), (1246, 186)], "muted")
+    zone_h(d, 1288, 330, 136, 278, "SOC TEAM")
+    ic_monitor(d, 1356, 400); label(d, 1356, 436, "Console", "live queue")
+    ic_user(d, 1356, 512); label(d, 1356, 546, "Analyst", "approves")
+    d.line([(1244, 356), (1286, 392)], "ink")
+    # actions back
+    d.line([(1356, 608), (1356, 706), (686, 706), (686, 646)], "ink", sw=2)
+    d.text(1020, 692, "approved actions · contextual response, mitigation, remediation", 11, "ink", "middle", 600,
+           mono=True)
+    return d
+
+
+FIGURES = [topology, context, lifecycle, taint, policy, privacy, judge, conformal, agentwatch, correlation]
 
 
 def render(mode: str = "file") -> dict[str, D]:

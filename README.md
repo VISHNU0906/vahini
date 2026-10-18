@@ -31,7 +31,7 @@ Five planes. Each is a published 2025–26 result or production pattern, re-engi
 
 Plus **AgentWatch**, which runs the same taint logic on the customer's own AI agents. Prahari ingests OpenTelemetry GenAI traces (`gen_ai.*`) and raises an alert when a tool call is steered by content the agent *read* instead of what the user *asked*. The alerts are mapped to OWASP ASI01/ASI02 and MITRE ATLAS and land in the same SOC queue.
 
-![System context](docs/diagrams/context.svg)
+![Enterprise topology](docs/diagrams/topology.svg)
 
 *Raw telemetry is scanned and tokenised inside the customer's network. Prahari and every model only see tokens. Actions return through the customer's own executor.*
 
