@@ -27,6 +27,8 @@ AI can be manipulated. It can hallucinate. It can be attacked. Today it is trust
 
 Attackers use AI now too. A SOC system that can hallucinate is not a reliable defense.
 
+**Who backs this up.** Researchers from OpenAI, Anthropic and Google DeepMind showed that adaptive attacks get past every published prompt-injection defense ([arXiv:2510.09023](https://arxiv.org/abs/2510.09023)). Log poisoning hijacks AI log analysis ([LogInject](https://arxiv.org/abs/2607.14493), [Sygnia](https://www.sygnia.co/blog/log-prompt-poisoning-xdr-ai-risks)), and malware already targets AI analysts ([Check Point Research](https://research.checkpoint.com/2025/ai-evasion-prompt-injection)). AI triage agents dismiss real attacks when evidence is missing ([ALERT-BENCH](https://arxiv.org/abs/2610.10608)). The fix the labs point to is architecture, not filters: Google DeepMind's [CaMeL](https://arxiv.org/abs/2503.18813), Microsoft's [FIDES](https://arxiv.org/abs/2505.23643) and Meta's Rule of Two. Every claim, with sources: [docs/research/evidence.md](docs/research/evidence.md).
+
 ## The idea: zero trust, for the AI itself
 
 Vahini brings zero trust and defense in depth into the AI-powered SOC. Nothing is trusted by default, and every layer checks the one before it. Trust, but verify.

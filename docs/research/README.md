@@ -1,6 +1,6 @@
 # Research sources
 
-The papers, reports and industry write-ups Vahini is built on, grouped by the layer they inform. BibTeX for every paper is in [references.bib](references.bib).
+The papers, reports and industry write-ups Vahini is built on, grouped by the layer they inform. BibTeX for every paper is in [references.bib](references.bib). For each claim in the pitch and who backs it, see [evidence.md](evidence.md).
 
 We link to the originals instead of committing PDFs. Most are under publisher or author copyright, and links always point to the latest version.
 
