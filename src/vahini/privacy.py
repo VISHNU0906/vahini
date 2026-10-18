@@ -1,7 +1,7 @@
 """Privacy plane: keyed pseudonymisation before any model sees telemetry.
 
 Static masking (every IP -> "IP") destroys correlation; unkeyed hashing can
-be reversed by guessing and links unrelated tenants. Prahari instead replaces
+be reversed by guessing and links unrelated tenants. Vahini instead replaces
 identifiers with HMAC-SHA256 tokens under a per-tenant key held only in the
 tenant's vault, so:
 

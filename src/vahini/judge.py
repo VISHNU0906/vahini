@@ -2,7 +2,7 @@
 
 Baseline SOC agents dismiss real attacks when a search comes back empty
 (ALERT-BENCH, arXiv:2610.10608). An attacker who clears logs produces exactly
-that. Prahari's judge therefore applies three rules to the ledger before any
+that. Vahini's judge therefore applies three rules to the ledger before any
 benign verdict is accepted:
 
 1. Absence of evidence is not evidence of absence: an empty result can never

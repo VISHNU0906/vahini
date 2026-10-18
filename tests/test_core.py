@@ -2,17 +2,17 @@ import json
 import random
 from pathlib import Path
 
-from prahari.agentwatch import analyse_trace
-from prahari.canary import Canary, check
-from prahari.capability import Source, derive, label
-from prahari.conformal import ConformalGate, Route, miss_threshold
-from prahari.correlate import correlate
-from prahari.detect import Scanner, reveal_hidden
-from prahari.judge import judge
-from prahari.ledger import Ledger
-from prahari.policy import Decision, Policy, ProposedAction, Risk, ToolSpec
-from prahari.privacy import Vault, sanitize_alert, sanitize_text
-from prahari.triage import TOOLS, Prahari
+from vahini.agentwatch import analyse_trace
+from vahini.canary import Canary, check
+from vahini.capability import Source, derive, label
+from vahini.conformal import ConformalGate, Route, miss_threshold
+from vahini.correlate import correlate
+from vahini.detect import Scanner, reveal_hidden
+from vahini.judge import judge
+from vahini.ledger import Ledger
+from vahini.policy import Decision, Policy, ProposedAction, Risk, ToolSpec
+from vahini.privacy import Vault, sanitize_alert, sanitize_text
+from vahini.triage import TOOLS, Vahini
 
 EX = Path(__file__).resolve().parent.parent / "examples"
 
@@ -208,7 +208,7 @@ def test_agentwatch_quiet_when_user_asked():
 
 def test_injected_alert_is_never_auto_closed():
     gate = ConformalGate(close_below=0.99, escalate_above=1.0)   # would auto-close everything
-    pr = Prahari(gate=gate, vault=Vault("acme", b"k"))
+    pr = Vahini(gate=gate, vault=Vault("acme", b"k"))
     alert = json.loads((EX / "alerts.json").read_text())[1]
     rep = pr.triage(alert)
     assert rep.route != Route.AUTO_CLOSE
@@ -217,7 +217,7 @@ def test_injected_alert_is_never_auto_closed():
 
 
 def test_compromised_planner_cannot_allowlist():
-    pr = Prahari(gate=ConformalGate(0.1, 0.9))
+    pr = Vahini(gate=ConformalGate(0.1, 0.9))
     act = ProposedAction(TOOLS["allowlist_ip"], {"ip": label("198.51.100.7", Source.TELEMETRY)})
     decision, _ = pr.evaluate_injected_action(act)
     assert decision == Decision.REQUIRE_APPROVAL

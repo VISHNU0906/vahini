@@ -109,7 +109,7 @@ def plan(category: str, iocs: dict[str, list[Labeled]]) -> list[ProposedAction]:
     """
     allowed = PLAYBOOKS.get(category, ["comment"])
     actions: list[ProposedAction] = []
-    note = label(f"Prahari triage for {category}", Source.SYSTEM)
+    note = label(f"Vahini triage for {category}", Source.SYSTEM)
     for name in allowed:
         tool = TOOLS[name]
         if name in ("enrich_ip", "block_ip"):
@@ -136,7 +136,7 @@ def default_scorer(alert: dict[str, Any], injection_score: float, intel: set[str
 
 
 @dataclass
-class Prahari:
+class Vahini:
     gate: ConformalGate
     policy: Policy = field(default_factory=Policy)
     scanner: Scanner = field(default_factory=Scanner)

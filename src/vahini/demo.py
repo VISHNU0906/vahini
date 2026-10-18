@@ -1,4 +1,4 @@
-"""End-to-end offline demo: `python -m prahari.demo`.
+"""End-to-end offline demo: `python -m vahini.demo`.
 
 Runs the sample alert storm and agent trace in examples/ through every plane.
 Calibration scores are synthetic (seeded) so the demo is reproducible; on
@@ -17,7 +17,7 @@ from .conformal import ConformalGate
 from .correlate import correlate
 from .policy import Policy, ProposedAction, Risk
 from .privacy import Vault, sanitize_alert
-from .triage import TOOLS, Prahari
+from .triage import TOOLS, Vahini
 
 ROOT = Path(__file__).resolve().parents[2]
 EX = ROOT / "examples"
@@ -37,7 +37,7 @@ def main() -> None:
     gate = ConformalGate.calibrate(malicious, benign, alpha=0.01, beta=0.05)
     vault = Vault("acme-bank", b"tenant-key-held-in-customer-vault")
 
-    pr = Prahari(gate=gate, policy=Policy(auto_max_risk=Risk.LOW, crown_jewels=frozenset({"FIN-DB-01"})),
+    pr = Vahini(gate=gate, policy=Policy(auto_max_risk=Risk.LOW, crown_jewels=frozenset({"FIN-DB-01"})),
                  intel={"198.51.100.7"}, vault=vault,
                  change_tickets={"WEB-01"})   # CHG-2231: quarterly ASV scan of WEB-01
 

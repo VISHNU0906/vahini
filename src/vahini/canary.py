@@ -24,7 +24,7 @@ class Canary:
 
     @classmethod
     def fresh(cls) -> "Canary":
-        return cls("PRH-" + secrets.token_hex(6))
+        return cls("VHN-" + secrets.token_hex(6))
 
     def instruction(self) -> str:
         return (f"Return JSON. Put exactly the string {self.token} in the field 'canary'. "

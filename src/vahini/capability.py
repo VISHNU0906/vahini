@@ -18,7 +18,7 @@ from typing import Any, Iterable
 
 class Source(str, Enum):
     ANALYST = "analyst"            # typed by a human analyst in the console
-    SYSTEM = "system"              # Prahari config, playbooks, asset inventory
+    SYSTEM = "system"              # Vahini config, playbooks, asset inventory
     TELEMETRY = "telemetry"        # raw log / alert fields from SIEM or EDR
     EXTERNAL = "external"          # threat intel feeds, web lookups, emails
     QUARANTINED_LLM = "q_llm"      # anything the quarantined model produced
