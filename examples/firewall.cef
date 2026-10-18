@@ -1,0 +1,1 @@
+Oct 18 09:30:11 pa-fw01 CEF:0|Palo Alto Networks|PAN-OS|11.1.0|threat|C2 traffic blocked|8|rt=1792295411000 src=203.0.113.50 dst=10.20.8.44 dhost=FIN-LT-044 suser=ravi.k act=blocked msg=outbound connection to known C2 \= blocked externalId=7365921

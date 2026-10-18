@@ -1,0 +1,27 @@
+#!/var/ossec/framework/python/bin/python3
+"""Wazuh integration: forward each matching alert to Vahini.
+
+Install as /var/ossec/integrations/custom-vahini (owner root:wazuh, mode 750).
+Wazuh calls it with: <alert file> <api key> <hook url>.
+"""
+import json
+import sys
+import urllib.request
+
+
+def main() -> int:
+    alert_file, api_key, hook_url = sys.argv[1], sys.argv[2], sys.argv[3]
+    with open(alert_file, encoding="utf-8") as fh:
+        alert = json.load(fh)
+    req = urllib.request.Request(
+        hook_url,
+        data=json.dumps(alert).encode(),
+        headers={"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"},
+        method="POST",
+    )
+    with urllib.request.urlopen(req, timeout=10) as resp:
+        return 0 if 200 <= resp.status < 300 else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

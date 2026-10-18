@@ -1,0 +1,7 @@
+Id,OrgId,IncidentId,AlertId,Timestamp,DetectorId,AlertTitle,Category,MitreTechniques,IncidentGrade,EntityType,EvidenceRole
+1,7,101,9001,2024-06-04T06:05:15Z,524,Suspicious PowerShell,Execution,T1059;T1059.001,TruePositive,Process,Impacted
+2,7,101,9002,2024-06-04T06:06:01Z,611,LSASS access,CredentialAccess,T1003,TruePositive,Machine,Impacted
+3,7,102,9003,2024-06-04T07:10:00Z,12,Port scan,Discovery,T1046,BenignPositive,Ip,Related
+4,9,201,9004,2024-06-05T01:00:00Z,33,Impossible travel,InitialAccess,T1078,FalsePositive,User,Impacted
+5,9,202,9005,2024-06-05T02:00:00Z,44,Malicious URL click,InitialAccess,T1566,TruePositive,Url,Related
+6,9,203,9006,2024-06-05T03:00:00Z,55,Unusual sign-in,InitialAccess,,,User,Impacted

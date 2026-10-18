@@ -1,0 +1,26 @@
+{
+  "id": "da638721c1f3bfd2d4c5_-1093784223",
+  "title": "Suspicious PowerShell command line",
+  "severity": "high",
+  "category": "Execution",
+  "createdDateTime": "2026-10-18T03:51:37.902Z",
+  "detectorId": "7f1c8e2b-0000-4e3a-9a7d-3c1b2a4d5e6f",
+  "description": "An Office application launched encoded PowerShell.",
+  "evidence": [
+    {
+      "@odata.type": "#microsoft.graph.security.deviceEvidence",
+      "deviceDnsName": "FIN-LT-044.vishnu.corp"
+    },
+    {
+      "@odata.type": "#microsoft.graph.security.userEvidence",
+      "userAccount": {
+        "accountName": "ravi.k",
+        "domainName": "VISHNU"
+      }
+    },
+    {
+      "@odata.type": "#microsoft.graph.security.processEvidence",
+      "processCommandLine": "powershell.exe -nop -w hidden -enc SQBFAFgA"
+    }
+  ]
+}

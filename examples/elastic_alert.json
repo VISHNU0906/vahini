@@ -1,0 +1,30 @@
+{
+  "@timestamp": "2026-10-18T03:42:44.123Z",
+  "kibana.alert.uuid": "8f1c2a7e-5b2d-4c0e-9a51-2f0b7e1d3c44",
+  "kibana.alert.rule.name": "Potential SSH Brute Force Detected",
+  "kibana.alert.rule.rule_id": "1c27fa22-7727-4dd3-81c0-de6da5555feb",
+  "kibana.alert.severity": "high",
+  "kibana.alert.risk_score": 73,
+  "kibana.alert.rule.threat": [
+    {
+      "framework": "MITRE ATT&CK",
+      "tactic": {
+        "id": "TA0006",
+        "name": "Credential Access"
+      },
+      "technique": [
+        {
+          "id": "T1110",
+          "name": "Brute Force"
+        }
+      ]
+    }
+  ],
+  "event.category": [
+    "authentication"
+  ],
+  "host.name": "BLR-VPN-01",
+  "source.ip": "198.51.100.7",
+  "user.name": "ravi.k",
+  "message": "52 failed SSH logins for ravi.k in 5 minutes"
+}

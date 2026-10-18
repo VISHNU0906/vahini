@@ -7,11 +7,13 @@
     GET  /v1/approvals           actions waiting for an analyst
     POST /v1/approvals/{id}      {"decision": "approve" | "deny", "analyst": "...", "note": "..."}
     GET  /v1/keys                public keys, so auditors can verify every signed ledger entry
+    GET  /                       the analyst console
     GET  /healthz
 """
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 from .agents import AgentMesh
@@ -21,8 +23,13 @@ from .connectors.wazuh import from_wazuh
 
 def create_app(mesh: AgentMesh):
     from fastapi import Body, FastAPI, HTTPException
+    from fastapi.responses import HTMLResponse
 
     app = FastAPI(title="Vahini", version="0.2.0")
+
+    @app.get("/", response_class=HTMLResponse)
+    def console() -> str:
+        return (Path(__file__).parent / "console" / "index.html").read_text(encoding="utf-8")
 
     @app.get("/healthz")
     def health() -> dict[str, str]:

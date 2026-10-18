@@ -1,0 +1,15 @@
+{
+  "sid": "scheduler__admin__SplunkEnterpriseSecuritySuite__RMD5c3d1f2a",
+  "search_name": "Access - Brute Force Access Behavior Detected - Rule",
+  "result": {
+    "_time": "1792294964",
+    "src": "198.51.100.7",
+    "dest": "BLR-VPN-01",
+    "user": "ravi.k",
+    "urgency": "high",
+    "annotations.mitre_attack.mitre_tactic": [
+      "credential-access"
+    ],
+    "event_id": "notable-0001"
+  }
+}

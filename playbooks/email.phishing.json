@@ -1,0 +1,17 @@
+{
+  "category": "email.phishing",
+  "description": "A phishing message reached a user.",
+  "tools": [
+    "lookup_user",
+    "comment",
+    "disable_user"
+  ],
+  "hypotheses": [
+    "user clicked and entered credentials",
+    "mailbox rule created for exfiltration"
+  ],
+  "mitre": [
+    "T1566",
+    "T1114"
+  ]
+}

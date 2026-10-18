@@ -1,0 +1,6 @@
+apiVersion: v2
+name: vahini
+description: AI-powered SOC that cannot be manipulated
+type: application
+version: 0.3.0
+appVersion: "0.3.0"

@@ -83,43 +83,68 @@ With Docker: copy `.env.example` to `.env`, then `docker compose up`.
 
 To use a real model, install `.[llm]` and set `ANTHROPIC_API_KEY` for Claude, or point `OllamaModel` at a local model when data must stay on-prem. Both plug into the quarantined reader and the planner in [`src/vahini/llm.py`](src/vahini/llm.py).
 
-## What's in the box
+## Integrations
+
+| Plug in | How |
+|---|---|
+| Wazuh | `deploy/wazuh/custom-vahini` integration, or replay `alerts.json` |
+| Elastic Security | ECS detection alerts (`connectors/elastic.py`) |
+| Microsoft Defender XDR / Sentinel | Graph security `alerts_v2` (`connectors/sentinel.py`) |
+| Splunk Enterprise Security | Notable events via webhook (`connectors/splunk.py`) |
+| Firewalls, proxies, EDRs | CEF over syslog (`connectors/cef.py`) |
+| Your AI agents | OpenTelemetry GenAI traces through `deploy/otel/collector.yaml` |
+
+| Respond through | Action |
+|---|---|
+| CrowdStrike Falcon, Defender for Endpoint | contain the host |
+| Entra ID, Okta | disable the account, revoke sessions |
+| Palo Alto / Fortinet / Check Point | block via an External Dynamic List |
+| Jira, ServiceNow | open the case |
+
+Every executor builds the exact API request first and stays in dry run until you switch it on.
+
+## Deploy
+
+```bash
+docker compose up --build                     # single node
+helm install vahini deploy/helm/vahini        # Kubernetes, with network policy and a persistent signed ledger
+```
+
+The analyst console is served at `/` by the API.
+
+## Repository map
 
 ```
 src/vahini/
-  privacy.py        layer 1  tenant-keyed tokens, secret removal
-  detect.py         layer 2  hidden-character and steering detection on raw text
-  llm.py            layer 3  quarantined reader + planner, Claude or local model, canary-checked
-  capability.py     layer 4  every value carries where it came from
-  policy.py         layer 4  plain-code policy gate
-  judge.py          layer 5  no benign verdict while an attack theory is open
-  conformal.py      layer 6  auto-close ceiling with a provable bound
-  agentwatch.py     layer 7  injection-steered tool calls in your own AI agents
-  ledger.py         base     signed (Ed25519), hash-chained evidence ledger
-  canary.py                  known-answer check on every reader call
-  correlate.py               alerts -> incidents, ranked by kill-chain stage
-  triage.py                  the pipeline that ties the layers together
-  agents.py                  always-on agent mesh, executor, approval queue
-  connectors/       wazuh.py (alerts.json / webhook), otel.py (OTLP/JSON traces)
-  service.py                 FastAPI app
-  cli.py, demo.py
+  privacy.py          layer 1  tenant-keyed tokens, secret removal
+  detect.py           layer 2  hidden-character and steering detection on raw text
+  promptguard.py      layer 2  Llama Prompt Guard 2 classifier
+  llm.py              layer 3  quarantined reader + planner, Claude or local model, canary-checked
+  canary.py           layer 3  known-answer check on every reader call
+  capability.py       layer 4  every value carries where it came from
+  policy.py           layer 4  plain-code policy gate
+  judge.py            layer 5  no benign verdict while an attack theory is open
+  conformal.py        layer 6  auto-close ceiling with a provable bound
+  agentwatch.py       layer 7  injection-steered tool calls in your own AI agents
+  ledger.py           base     Ed25519-signed, hash-chained evidence ledger
+  triage.py                    the pipeline that ties the layers together
+  correlate.py                 alerts -> incidents, ranked by kill-chain stage
+  agents.py                    always-on agent mesh and approval queue
+  playbooks.py                 loads reviewed playbooks from playbooks/
+  connectors/                  wazuh, elastic, sentinel, splunk, cef, otel
+  executors/                   edr, identity, firewall, ticketing (dry run by default)
+  storage/                     append-only SQLite ledger store
+  eval/                        scorecard metrics, Microsoft GUIDE loader and calibration
+  service.py, console/         FastAPI app and analyst console
+  config.py, cli.py, demo.py
+playbooks/                     one reviewed JSON file per alert category
+deploy/                        helm chart, wazuh integration, otel collector
+examples/                      real-format samples from every connector
 docs/
-  architecture.md   how each layer works, with diagrams
-  threat-model.md   what we defend against, and what we don't
-  research-basis.md the papers and products this builds on
-  adr/              the decisions behind the design
-  diagrams/         generated SVGs (python docs/diagrams/diagrams.py)
+  architecture.md              how each layer works, with diagrams
+  threat-model.md              what we defend against
+  adr/                         the decisions behind the design
+  research/                    papers, reports and BibTeX we build on
+  diagrams/                    generated SVGs
+tests/                         62 tests
 ```
-
-## Honest limits
-
-- The detectors will miss things. Adaptive attackers beat every published filter. That's why safety comes from the policy gate and the ceiling, not from detection.
-- The auto-close ceiling only holds while new alerts look like the calibration data. Recalibrate per customer, weekly.
-- The demo calibration is synthetic. Real calibration needs labelled history.
-- The executor in this repo is a dry run. Real EDR, IdP and firewall connectors plug into the same interface.
-
-## Team Zenith
-
-Built for CyberForge 2026 (Mitigata × HackCulture). Credits and third-party components are in [DISCLOSURES.md](DISCLOSURES.md).
-
-Apache-2.0

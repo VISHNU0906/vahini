@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-vahini
+  labels: {app: vahini}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels: {app: vahini}
+  template:
+    metadata:
+      labels: {app: vahini}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: vahini
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 8080
+          env:
+            - {name: VAHINI_TENANT, value: {{ .Values.tenant | quote }}}
+            - name: VAHINI_TENANT_KEY
+              valueFrom:
+                secretKeyRef: {name: {{ .Values.tenantKeySecret.name }}, key: {{ .Values.tenantKeySecret.key }}}
+            - {name: VAHINI_CROWN_JEWELS, value: {{ .Values.crownJewels | quote }}}
+            - {name: VAHINI_ALPHA, value: {{ .Values.alpha | quote }}}
+            - {name: VAHINI_BETA, value: {{ .Values.beta | quote }}}
+            - {name: VAHINI_DRY_RUN, value: {{ .Values.dryRun | quote }}}
+            - {name: VAHINI_LEDGER_DB, value: /data/ledger.db}
+            {{- if .Values.anthropicApiKeySecret.name }}
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef: {name: {{ .Values.anthropicApiKeySecret.name }}, key: {{ .Values.anthropicApiKeySecret.key }}}
+            {{- end }}
+          readinessProbe:
+            httpGet: {path: /healthz, port: 8080}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: ["ALL"]}
+          resources: {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - {name: data, mountPath: /data}
+      volumes:
+        - name: data
+          {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim: {claimName: {{ .Release.Name }}-vahini-ledger}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}

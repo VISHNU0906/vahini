@@ -1,0 +1,26 @@
+# OpenTelemetry Collector: receive AI-agent traces (gen_ai.* spans) and forward them to Vahini.
+receivers:
+  otlp:
+    protocols:
+      grpc: {endpoint: 0.0.0.0:4317}
+      http: {endpoint: 0.0.0.0:4318}
+
+processors:
+  batch: {timeout: 2s}
+  filter/genai:
+    # Keep only spans that carry GenAI semantic-convention attributes.
+    traces:
+      span:
+        - 'attributes["gen_ai.operation.name"] == nil'
+
+exporters:
+  otlphttp/vahini:
+    traces_endpoint: http://vahini:8080/v1/traces
+    encoding: json
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [filter/genai, batch]
+      exporters: [otlphttp/vahini]

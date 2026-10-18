@@ -1,0 +1,16 @@
+{
+  "category": "ai.agent",
+  "description": "A company AI agent was steered by content it read.",
+  "tools": [
+    "comment",
+    "notify_customer"
+  ],
+  "hypotheses": [
+    "agent goal hijack via indirect prompt injection",
+    "data exfiltration through an agent tool"
+  ],
+  "mitre": [
+    "AML.T0051",
+    "AML.T0086"
+  ]
+}

@@ -1,0 +1,8 @@
+<!-- Add inside <ossec_config> on the Wazuh manager, then restart wazuh-manager. -->
+<integration>
+  <name>custom-vahini</name>
+  <hook_url>http://vahini:8080/v1/alerts?source=wazuh</hook_url>
+  <api_key>REPLACE_WITH_VAHINI_INGEST_TOKEN</api_key>
+  <level>5</level>
+  <alert_format>json</alert_format>
+</integration>

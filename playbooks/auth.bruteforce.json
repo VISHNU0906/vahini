@@ -1,0 +1,18 @@
+{
+  "category": "auth.bruteforce",
+  "description": "Password guessing or spraying, possibly followed by a successful login.",
+  "tools": [
+    "enrich_ip",
+    "lookup_user",
+    "comment",
+    "block_ip"
+  ],
+  "hypotheses": [
+    "credential compromise followed by a successful login",
+    "password spray across many accounts"
+  ],
+  "mitre": [
+    "T1110",
+    "T1078"
+  ]
+}
